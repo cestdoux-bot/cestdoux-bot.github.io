@@ -3,381 +3,516 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Analyseur Nutritionnel Rando Pro</title>
+    <title>Calculateur Rando Expert - Itinérance & Nutrition</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&display=swap');
-        body { font-family: 'Inter', sans-serif; }
-        .card { background: white; border-radius: 1rem; shadow-sm border border-slate-200; }
-        input[type="range"] { accent-color: #059669; }
-        .progress-bar { transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.3s; }
-        .table-input { @apply w-full bg-transparent border-b border-transparent hover:border-slate-200 focus:border-emerald-500 outline-none transition-colors text-center font-medium py-1; }
-        /* Scrollbar subtile pour le tableau mobile */
-        .custom-scrollbar::-webkit-scrollbar { height: 4px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        :root {
+            --primary: #2d5a27;
+            --secondary: #f4f7f1;
+        }
+        body {
+            background-color: var(--secondary);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .card {
+            background: white;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        .tab-active {
+            border-bottom: 3px solid var(--primary);
+            color: var(--primary);
+            font-weight: bold;
+        }
+        input[type="number"], input[type="text"], select {
+            border: 1px solid #e2e8f0;
+            border-radius: 0.5rem;
+            padding: 0.4rem;
+            width: 100%;
+            font-size: 0.875rem;
+        }
+        .profile-badge {
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .profile-badge.active {
+            background-color: #2d5a27;
+            color: white;
+        }
+        .nutri-grid {
+            display: grid;
+            grid-template-columns: 2.5rem 3.5rem 2fr 1fr 1fr 1fr 1fr 1fr 1fr auto;
+            gap: 0.5rem;
+            align-items: center;
+        }
+        @media (max-width: 768px) {
+            .nutri-grid {
+                grid-template-columns: auto auto 1fr 1fr;
+            }
+        }
+        .item-selected {
+            background-color: #f0fdf4;
+            border-color: #bbf7d0;
+        }
     </style>
 </head>
-<body class="bg-slate-50 min-h-screen pb-12 text-slate-800">
+<body class="p-4 md:p-8">
 
-    <header class="bg-emerald-900 text-white py-10 px-4 mb-8 shadow-2xl relative overflow-hidden">
-        <div class="absolute inset-0 opacity-10">
-            <svg viewBox="0 0 100 100" preserveAspectRatio="none" class="h-full w-full"><path d="M0 100 L30 40 L50 70 L80 20 L100 100 Z" fill="white"></path></svg>
-        </div>
-        <div class="max-w-6xl mx-auto text-center relative z-10">
-            <h1 class="text-4xl font-black mb-2 tracking-tight">Analyseur Nutritionnel Rando</h1>
-            <p class="text-emerald-200 text-sm uppercase tracking-[0.2em] font-bold">Physiologie & Logistique de l'effort</p>
-        </div>
-    </header>
+    <div class="max-w-6xl mx-auto">
+        <header class="mb-8 text-center">
+            <h1 class="text-3xl font-bold text-green-900">Calculateur de Randonnée Expert</h1>
+            <p class="text-sm text-gray-600 mt-2 italic">Moteur bioénergétique basé sur les équations de Pandolf & Harris-Benedict</p>
+            <div class="mt-4 flex items-center justify-center gap-4">
+                <label class="text-gray-700 font-medium">Nombre de jours :</label>
+                <input type="number" id="total-days" onchange="updateDayCount()" value="5" min="1" max="14" class="w-20 text-center">
+            </div>
+        </header>
 
-    <main class="max-w-7xl mx-auto px-4 space-y-8">
-        
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div class="lg:col-span-2 space-y-6">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <section class="card p-6 border-t-4 border-emerald-600">
-                        <h2 class="text-sm font-black mb-4 flex items-center gap-2 text-emerald-800 uppercase tracking-widest">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" stroke-width="2.5"></path></svg>
-                            Le Randonneur
-                        </h2>
-                        <div class="grid grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-[10px] font-black text-slate-400 uppercase">Poids de corps (kg)</label>
-                                <input type="number" id="weight" value="70" class="mt-1 block w-full rounded-lg border-slate-200 p-2 bg-slate-50 border font-bold focus:ring-2 focus:ring-emerald-500 outline-none">
-                            </div>
-                            <div>
-                                <label class="block text-[10px] font-black text-slate-400 uppercase">Poids du sac (kg)</label>
-                                <input type="number" id="packWeight" value="12" class="mt-1 block w-full rounded-lg border-emerald-100 p-2 bg-emerald-50 border font-bold text-emerald-700">
-                            </div>
-                            <div class="col-span-2 flex gap-3">
-                                <div class="w-1/2">
-                                    <label class="block text-[10px] font-black text-slate-400 uppercase">Sexe</label>
-                                    <select id="gender" class="mt-1 block w-full rounded-lg border-slate-200 p-2 bg-slate-50 border font-bold">
-                                        <option value="male">Homme</option>
-                                        <option value="female">Femme</option>
-                                    </select>
-                                </div>
-                                <div class="w-1/2">
-                                    <label class="block text-[10px] font-black text-slate-400 uppercase">Âge</label>
-                                    <input type="number" id="age" value="30" class="mt-1 block w-full rounded-lg border-slate-200 p-2 bg-slate-50 border font-bold">
-                                </div>
-                            </div>
-                        </div>
-                    </section>
-
-                    <section class="card p-6 border-t-4 border-emerald-600">
-                        <h2 class="text-sm font-black mb-4 flex items-center gap-2 text-emerald-800 uppercase tracking-widest">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" stroke-width="2.5"></path></svg>
-                            L'Étape
-                        </h2>
-                        <div class="grid grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-[10px] font-black text-slate-400 uppercase">Distance (km)</label>
-                                <input type="number" id="distance" value="15" class="mt-1 block w-full rounded-lg border-slate-200 p-2 bg-slate-50 border font-bold">
-                            </div>
-                            <div>
-                                <label class="block text-[10px] font-black text-slate-400 uppercase">D+ Cumulé (m)</label>
-                                <input type="number" id="elevation" value="800" class="mt-1 block w-full rounded-lg border-slate-200 p-2 bg-slate-50 border font-bold">
-                            </div>
-                            <div class="col-span-2">
-                                <label class="block text-[10px] font-black text-slate-400 uppercase">Nature du Terrain</label>
-                                <select id="terrain" class="mt-1 block w-full rounded-lg border-slate-200 p-2 bg-slate-50 border font-bold">
-                                    <option value="1.0">Route / Bitume (Facile)</option>
-                                    <option value="1.2" selected>Sentier Terre / Forêt (Standard)</option>
-                                    <option value="1.5">Herbe haute / Sentier meuble</option>
-                                    <option value="1.8">Éboulis / Sable / Hors-piste</option>
-                                    <option value="2.5">Neige profonde (Difficile)</option>
-                                </select>
-                            </div>
-                        </div>
-                    </section>
-                </div>
-
-                <section class="card p-6 border-l-8 border-emerald-600">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-                        <div>
-                            <label class="block text-[10px] font-black text-slate-400 uppercase mb-1">Temps de marche effectif (h)</label>
-                            <input type="number" id="hours" value="5" step="0.5" class="mt-1 block w-full rounded-xl border-slate-200 p-3 bg-white border font-black text-2xl text-emerald-800 focus:ring-2 focus:ring-emerald-500">
-                            <div class="flex justify-between mt-3 text-[10px] font-bold text-slate-400 uppercase italic">
-                                <span>Vitesse : <span id="speedDisplay" class="text-emerald-600">0</span> km/h</span>
-                                <span>Pente moy. : <span id="gradeDisplay" class="text-emerald-600">0</span> %</span>
-                            </div>
-                        </div>
-                        <div>
-                            <label class="block text-[10px] font-black text-slate-400 uppercase italic mb-3 text-center md:text-left">Météo : <span class="text-emerald-700 font-black text-sm" id="tempVal">18°C</span></label>
-                            <input type="range" id="temp" min="-15" max="40" value="18" class="w-full h-2 bg-slate-200 rounded-lg cursor-pointer">
-                            <div class="flex justify-between text-[9px] font-black text-slate-300 mt-2 uppercase tracking-tighter">
-                                <span>Grand Froid (-15°)</span>
-                                <span>Tempéré</span>
-                                <span>Canicule (40°)</span>
-                            </div>
-                        </div>
-                    </div>
-                </section>
+        <!-- SECTION PROFILS -->
+        <section class="card p-6 mb-8">
+            <h2 class="text-xl font-semibold mb-4 flex items-center gap-2">👤 Profils des Randonneurs</h2>
+            <div class="grid grid-cols-2 gap-4 mb-6">
+                <button onclick="switchProfile(0)" id="btn-p0" class="profile-badge active p-3 rounded-lg border text-center font-bold">Cédrik</button>
+                <button onclick="switchProfile(1)" id="btn-p1" class="profile-badge p-3 rounded-lg border text-center font-bold">P-A</button>
             </div>
 
-            <div class="lg:col-span-1">
-                <div class="card p-6 sticky top-8 border-b-8 border-emerald-800 shadow-xl bg-white/80 backdrop-blur">
-                    <h2 class="text-lg font-black mb-6 text-slate-800 text-center uppercase tracking-tighter">Bilan Énergétique 24h</h2>
-                    
-                    <div class="space-y-4">
-                        <div class="bg-slate-900 p-6 rounded-3xl text-center shadow-lg transform transition-transform hover:scale-[1.02]">
-                            <p class="text-[10px] text-emerald-400 font-black uppercase tracking-widest mb-1">Cible Calorique Estimée</p>
-                            <p class="text-5xl font-black text-white" id="totalCalories">0</p>
-                            <p class="text-xs text-slate-400 font-bold mt-1 uppercase">Kilocalories</p>
-                        </div>
-
-                        <div class="p-5 bg-white rounded-2xl border border-slate-100 shadow-inner space-y-4">
-                            <div class="flex justify-between items-end">
-                                <p class="text-[10px] font-black text-slate-400 uppercase text-left">Apport actuel<br><span class="text-xs normal-case font-bold text-slate-300">Dans le sac à dos</span></p>
-                                <p class="text-2xl font-black text-slate-800"><span id="carriedCalories">0</span> <span class="text-xs text-slate-400">kcal</span></p>
-                            </div>
-                            <div class="w-full bg-slate-100 rounded-full h-5 overflow-hidden p-1 shadow-inner">
-                                <div id="energyProgress" class="progress-bar rounded-full h-full w-0 bg-emerald-500"></div>
-                            </div>
-                            <div id="energyStatus" class="text-center py-1 rounded-lg text-[10px] font-black uppercase tracking-widest bg-slate-50 text-slate-500">Calcul en cours...</div>
-                        </div>
-
-                        <div class="grid grid-cols-2 gap-3 text-center">
-                            <div class="bg-blue-50/50 p-3 rounded-2xl border border-blue-100">
-                                <p class="text-[9px] font-black text-blue-400 uppercase mb-1">Poids Vivres</p>
-                                <p id="footerTotalWeight" class="text-xl font-black text-blue-900">0g</p>
-                            </div>
-                            <div class="bg-slate-50 p-3 rounded-2xl border border-slate-200">
-                                <p class="text-[9px] font-black text-slate-400 uppercase mb-1">Balance</p>
-                                <p id="footerDiff" class="text-xl font-black">0</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <section class="card p-6 border-l-8 border-blue-600">
-            <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+            <div id="profile-form" class="grid grid-cols-2 md:grid-cols-6 gap-3 bg-gray-50 p-4 rounded-lg">
                 <div>
-                    <h2 class="text-2xl font-black flex items-center gap-3 text-slate-900">
-                        <span class="bg-blue-600 text-white p-2 rounded-lg"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" stroke-width="2"></path></svg></span>
-                        Inventaire de la Ration
-                    </h2>
-                    <p class="text-slate-400 text-xs font-bold uppercase tracking-widest mt-1">Personnalisez vos apports pour l'étape</p>
+                    <label class="block text-[10px] font-bold text-gray-500 uppercase">Nom</label>
+                    <input type="text" id="p-name" oninput="updateProfileData()">
                 </div>
-                <button onclick="addFoodRow()" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-black py-3 px-6 rounded-xl uppercase tracking-widest transition-all shadow-lg active:scale-95 flex items-center gap-2">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 4v16m8-8H4" stroke-width="3"></path></svg>
-                    Ajouter
-                </button>
-            </div>
-
-            <div class="overflow-x-auto custom-scrollbar">
-                <table class="w-full text-left border-collapse min-w-[900px]">
-                    <thead>
-                        <tr class="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b-2 border-slate-100">
-                            <th class="py-4 px-2 text-center w-12">Sac</th>
-                            <th class="py-4 px-2 w-1/4">Nom de l'aliment</th>
-                            <th class="py-4 px-2 text-center">Masse (g)</th>
-                            <th class="py-4 px-2 text-center bg-emerald-50 text-emerald-700">Kcal</th>
-                            <th class="py-4 px-2 text-center">Carbs (g)</th>
-                            <th class="py-4 px-2 text-center">Fats (g)</th>
-                            <th class="py-4 px-2 text-center">Prot (g)</th>
-                            <th class="py-4 px-2 text-center">Sodium (mg)</th>
-                            <th class="py-4 px-1 text-center w-12"></th>
-                        </tr>
-                    </thead>
-                    <tbody id="foodTableBody" class="divide-y divide-slate-100"></tbody>
-                </table>
-            </div>
-
-            <div class="mt-8 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                <div class="p-4 rounded-2xl bg-amber-50 border border-amber-100">
-                    <p class="text-[10px] font-black text-amber-500 uppercase mb-1">Glucides</p>
-                    <p id="totalCarbs" class="text-2xl font-black text-amber-900">0g</p>
+                <div>
+                    <label class="block text-[10px] font-bold text-gray-500 uppercase">Sexe</label>
+                    <select id="p-gender" onchange="updateProfileData()">
+                        <option value="M">Homme</option>
+                        <option value="F">Femme</option>
+                    </select>
                 </div>
-                <div class="p-4 rounded-2xl bg-rose-50 border border-rose-100">
-                    <p class="text-[10px] font-black text-rose-500 uppercase mb-1">Lipides</p>
-                    <p id="totalFats" class="text-2xl font-black text-rose-900">0g</p>
+                <div>
+                    <label class="block text-[10px] font-bold text-gray-500 uppercase">Âge</label>
+                    <input type="number" id="p-age" oninput="updateProfileData()" placeholder="ans">
                 </div>
-                <div class="p-4 rounded-2xl bg-indigo-50 border border-indigo-100">
-                    <p class="text-[10px] font-black text-indigo-500 uppercase mb-1">Protéines</p>
-                    <p id="totalProts" class="text-2xl font-black text-indigo-900">0g</p>
+                <div>
+                    <label class="block text-[10px] font-bold text-gray-500 uppercase">Taille (cm)</label>
+                    <input type="number" id="p-height" oninput="updateProfileData()" placeholder="cm">
                 </div>
-                <div class="p-4 rounded-2xl bg-slate-100 border border-slate-200">
-                    <p class="text-[10px] font-black text-slate-500 uppercase mb-1">Sodium</p>
-                    <p id="totalSodium" class="text-2xl font-black text-slate-900">0mg</p>
+                <div>
+                    <label class="block text-[10px] font-bold text-gray-500 uppercase">Poids (kg)</label>
+                    <input type="number" id="p-weight" oninput="updateProfileData()" placeholder="kg">
                 </div>
-                <div class="p-4 rounded-2xl bg-emerald-50 border border-emerald-100 lg:col-span-2">
-                    <p class="text-[10px] font-black text-emerald-500 uppercase mb-1">Densité Énergétique</p>
-                    <p id="energyDensity" class="text-2xl font-black text-emerald-900">0 <span class="text-xs">kcal/100g</span></p>
+                <div>
+                    <label class="block text-[10px] font-bold text-gray-500 uppercase">Niveau (1-10)</label>
+                    <input type="number" id="p-level" oninput="updateProfileData()" min="1" max="10">
                 </div>
             </div>
         </section>
-    </main>
+
+        <!-- SECTION ÉTAPE DU JOUR -->
+        <section class="card p-6 mb-8">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
+                <h2 class="text-xl font-semibold flex items-center gap-2">🏔️ Itinéraire & Étapes</h2>
+                <div class="text-xs bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full border border-yellow-200">
+                    Sélectionnez les aliments et ajustez les quantités pour chaque jour.
+                </div>
+            </div>
+            
+            <div id="day-tabs" class="flex overflow-x-auto gap-2 mb-6 pb-2 border-b">
+                <!-- Généré par JS -->
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="space-y-4">
+                    <h3 class="font-bold text-green-800 border-b pb-1">Détails de l'étape</h3>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-medium">Distance (km)</label>
+                            <input type="number" id="d-dist" oninput="saveCurrentDay(); calculate()" value="15">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium">Temps de marche (h)</label>
+                            <input type="number" id="d-time" oninput="saveCurrentDay(); calculate()" step="0.5" value="5">
+                            <span class="text-[9px] text-gray-400 italic">Durée réelle de l'effort</span>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs text-green-700 font-medium">Dénivelé Positif (m)</label>
+                            <input type="number" id="d-elev-pos" oninput="saveCurrentDay(); calculate()" value="800">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-blue-700 font-medium">Dénivelé Négatif (m)</label>
+                            <input type="number" id="d-elev-neg" oninput="saveCurrentDay(); calculate()" value="800">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium">Coefficient de terrain ($\eta$)</label>
+                        <select id="d-terrain" onchange="saveCurrentDay(); calculate()">
+                            <option value="1.0">Route / Sentier lisse (1.0)</option>
+                            <option value="1.2" selected>Sentier de terre / Mixte (1.2)</option>
+                            <option value="1.5">Herbe haute / Broussailles (1.5)</option>
+                            <option value="2.1">Sable mou / Éboulis (2.1)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="space-y-4 bg-green-50 p-4 rounded-lg">
+                    <h3 class="font-bold text-green-800 border-b pb-1">Charges du jour (Sac hors nourriture)</h3>
+                    <div>
+                        <label class="block text-sm" id="label-load-0">Sac Cédrik (kg)</label>
+                        <input type="number" id="d-load-0" oninput="saveCurrentDay(); calculate()" value="10">
+                    </div>
+                    <div>
+                        <label class="block text-sm" id="label-load-1">Sac P-A (kg)</label>
+                        <input type="number" id="d-load-1" oninput="saveCurrentDay(); calculate()" value="8">
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- NOURRITURE INDIVIDUELLE -->
+        <section class="space-y-8 mb-8">
+            <div class="card p-6 border-l-4 border-green-700 overflow-x-auto">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-bold text-green-900">🍎 Garde-manger : <span id="food-title-0">Cédrik</span></h3>
+                    <button onclick="addFoodItem(0)" class="bg-green-700 text-white px-3 py-1 rounded text-sm hover:bg-green-800">+ Ajouter</button>
+                </div>
+                <div class="hidden md:grid nutri-grid text-[10px] font-bold text-gray-500 uppercase mb-2 px-1 text-center">
+                    <div>Prévu</div>
+                    <div>Qté</div>
+                    <div class="text-left">Aliment</div>
+                    <div>Kcal/u</div>
+                    <div>Prot/u</div>
+                    <div>Gluc/u</div>
+                    <div>Lip/u</div>
+                    <div>Sod/u</div>
+                    <div>Fib/u</div>
+                    <div></div>
+                </div>
+                <div id="food-list-0" class="space-y-2"></div>
+            </div>
+
+            <div class="card p-6 border-l-4 border-blue-600 overflow-x-auto">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-bold text-blue-900">🍎 Garde-manger : <span id="food-title-1">P-A</span></h3>
+                    <button onclick="addFoodItem(1)" class="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-800">+ Ajouter</button>
+                </div>
+                <div class="hidden md:grid nutri-grid text-[10px] font-bold text-gray-500 uppercase mb-2 px-1 text-center">
+                    <div>Prévu</div>
+                    <div>Qté</div>
+                    <div class="text-left">Aliment</div>
+                    <div>Kcal/u</div>
+                    <div>Prot/u</div>
+                    <div>Gluc/u</div>
+                    <div>Lip/u</div>
+                    <div>Sod/u</div>
+                    <div>Fib/u</div>
+                    <div></div>
+                </div>
+                <div id="food-list-1" class="space-y-2"></div>
+            </div>
+        </section>
+
+        <!-- RÉSULTATS -->
+        <section id="results" class="grid grid-cols-1 md:grid-cols-2 gap-6 pb-10"></section>
+
+    </div>
 
     <script>
-        // --- ÉTAT ET PERSISTANCE ---
-        let foodItems = JSON.parse(localStorage.getItem('hiking_macros')) || [
-            { name: "Muesli au lait", kcal: 500, weight: 120, carbs: 75, fats: 12, proteins: 15, sodium: 150, checked: true },
-            { name: "Mélange Noix de cajou", kcal: 580, weight: 100, carbs: 30, fats: 45, proteins: 18, sodium: 300, checked: true },
-            { name: "Lyophilisé Pâtes Bolonaises", kcal: 650, weight: 150, carbs: 85, fats: 22, proteins: 25, sodium: 1100, checked: true }
+        let currentProfileIdx = 0;
+        let currentDayIdx = 0;
+
+        const profiles = [
+            { 
+                name: "Cédrik", gender: "M", age: 30, height: 180, weight: 75, level: 7, 
+                food: [{id: 'f1', label: "Lyophilisé Poulet", kcal: 650, prot: 35, gluc: 80, lip: 15, sod: 1200, fib: 8}] 
+            },
+            { 
+                name: "P-A", gender: "M", age: 32, height: 175, weight: 70, level: 6, 
+                food: [{id: 'f2', label: "Pâtes au Pesto", kcal: 580, prot: 18, gluc: 75, lip: 22, sod: 950, fib: 5}] 
+            }
         ];
 
-        let targetCalories = 0;
+        let days = [];
 
-        function saveData() {
-            localStorage.setItem('hiking_macros', JSON.stringify(foodItems));
-        }
-
-        // --- CALCULS PHYSIOLOGIQUES AVANCÉS ---
-        function calculate() {
-            const getVal = (id) => parseFloat(document.getElementById(id).value) || 0;
-            const gender = document.getElementById('gender').value;
-            const weight = getVal('weight'); 
-            const age = getVal('age');
-            const distance = getVal('distance');
-            const elevation = getVal('elevation');
-            const pack = getVal('packWeight'); 
-            const eta = getVal('terrain'); 
-            const hours = getVal('hours') || 1; 
-            const temp = getVal('temp');
-
-            // 1. Métabolisme de base (Mifflin-St Jeor)
-            let bmr = (10 * weight) + (6.25 * 175) - (5 * age);
-            bmr = (gender === 'male') ? bmr + 5 : bmr - 161;
-
-            // 2. Coût de l'effort (Vitesse et Pente)
-            const velocityKMH = distance / hours;
-            const velocityMS = velocityKMH / 3.6; 
-            const grade = (elevation / (distance * 1000)) * 100; 
-
-            // Formule de Pandolf modifiée (Watts)
-            // Inclut le coût du sac et le terrain
-            let watts = 1.5 * weight + 2.0 * (weight + pack) * Math.pow(pack / weight, 2) + 
-                        eta * (weight + pack) * (1.5 * Math.pow(velocityMS, 2) + 0.35 * velocityMS * grade);
-            
-            // Si la pente est descendante (approximation 1/3 de l'effort de montée pour le freinage)
-            // On considère ici que elevation est le D+ cumulé, donc on ajoute un coût forfaitaire pour le retour
-            const energyKcalEffort = (watts * 0.8604) * hours; 
-
-            // 3. Ajustements Thermiques
-            let thermoAdjustment = 0;
-            if (temp < 10) thermoAdjustment = bmr * (Math.abs(temp - 10) * 0.015); // Surcoût froid
-            if (temp > 28) thermoAdjustment = energyKcalEffort * ((temp - 28) * 0.04); // Surcoût chaleur
-
-            // 4. Total 24h : BMR + Effort (moins le bmr déjà compté pendant l'effort) + Afterburn (5%)
-            const total = (bmr + Math.max(0, energyKcalEffort) + thermoAdjustment) * 1.05;
-
-            targetCalories = total;
-            
-            // Update UI
-            document.getElementById('totalCalories').innerText = Math.round(total).toLocaleString();
-            document.getElementById('speedDisplay').innerText = velocityKMH.toFixed(1);
-            document.getElementById('gradeDisplay').innerText = grade.toFixed(1);
-            document.getElementById('tempVal').innerText = temp + "°C";
-
-            updateFoodAnalysis();
-        }
-
-        // --- ANALYSE NUTRITIONNELLE ---
-        function updateFoodAnalysis() {
-            let totals = { kcal: 0, weight: 0, carbs: 0, fats: 0, proteins: 0, sodium: 0 };
-
-            foodItems.forEach(item => {
-                if (item.checked) {
-                    totals.kcal += item.kcal;
-                    totals.weight += item.weight;
-                    totals.carbs += item.carbs;
-                    totals.fats += item.fats;
-                    totals.proteins += item.proteins;
-                    totals.sodium += item.sodium;
-                }
-            });
-
-            // Barre de progression intelligente
-            const percentage = Math.min(100, (totals.kcal / targetCalories) * 100);
-            const pb = document.getElementById('energyProgress');
-            pb.style.width = percentage + "%";
-            
-            // Changement de couleur dynamique
-            pb.classList.remove('bg-emerald-500', 'bg-amber-500', 'bg-rose-500');
-            if (percentage < 80) pb.classList.add('bg-amber-500');
-            else if (percentage > 110) pb.classList.add('bg-rose-500');
-            else pb.classList.add('bg-emerald-500');
-
-            const status = document.getElementById('energyStatus');
-            status.className = "text-center py-1 rounded-lg text-[10px] font-black uppercase tracking-widest";
-            if (percentage < 85) { status.innerText = "Déficit Énergétique"; status.classList.add('bg-amber-100', 'text-amber-700'); }
-            else if (percentage > 110) { status.innerText = "Excédent : Sac trop lourd ?"; status.classList.add('bg-rose-100', 'text-rose-700'); }
-            else { status.innerText = "Ration Optimale"; status.classList.add('bg-emerald-100', 'text-emerald-700'); }
-
-            document.getElementById('carriedCalories').innerText = Math.round(totals.kcal).toLocaleString();
-            document.getElementById('footerTotalWeight').innerText = Math.round(totals.weight) + "g";
-            
-            const diff = Math.round(totals.kcal - targetCalories);
-            const diffEl = document.getElementById('footerDiff');
-            diffEl.innerText = (diff > 0 ? "+" : "") + diff;
-            diffEl.className = `text-xl font-black ${diff < -200 ? 'text-rose-600' : 'text-emerald-600'}`;
-
-            // Macros
-            document.getElementById('totalCarbs').innerText = Math.round(totals.carbs) + "g";
-            document.getElementById('totalFats').innerText = Math.round(totals.fats) + "g";
-            document.getElementById('totalProts').innerText = Math.round(totals.proteins) + "g";
-            document.getElementById('totalSodium').innerText = Math.round(totals.sodium) + "mg";
-            
-            const density = totals.weight > 0 ? (totals.kcal / (totals.weight / 100)).toFixed(0) : 0;
-            document.getElementById('energyDensity').innerText = density;
-
-            saveData();
-        }
-
-        function renderFoodTable() {
-            const body = document.getElementById('foodTableBody');
-            body.innerHTML = "";
-            foodItems.forEach((item, index) => {
-                const tr = document.createElement('tr');
-                tr.className = item.checked ? "bg-white hover:bg-slate-50 transition-colors" : "bg-slate-50/50 opacity-60";
-                tr.innerHTML = `
-                    <td class="py-4 px-2 text-center"><input type="checkbox" ${item.checked ? 'checked' : ''} onchange="toggleItem(${index})" class="w-6 h-6 accent-emerald-600 cursor-pointer"></td>
-                    <td class="py-4 px-2"><input type="text" value="${item.name}" onchange="updateItem(${index}, 'name', this.value)" class="table-input !text-left font-bold text-slate-700"></td>
-                    <td class="py-4 px-2"><input type="number" value="${item.weight}" onchange="updateItem(${index}, 'weight', this.value)" class="table-input"></td>
-                    <td class="py-4 px-2 bg-emerald-50/30"><input type="number" value="${item.kcal}" onchange="updateItem(${index}, 'kcal', this.value)" class="table-input !text-emerald-700 font-black"></td>
-                    <td class="py-4 px-2"><input type="number" value="${item.carbs}" onchange="updateItem(${index}, 'carbs', this.value)" class="table-input !text-amber-700"></td>
-                    <td class="py-4 px-2"><input type="number" value="${item.fats}" onchange="updateItem(${index}, 'fats', this.value)" class="table-input !text-rose-700"></td>
-                    <td class="py-4 px-2"><input type="number" value="${item.proteins}" onchange="updateItem(${index}, 'proteins', this.value)" class="table-input !text-indigo-700"></td>
-                    <td class="py-4 px-2"><input type="number" value="${item.sodium}" onchange="updateItem(${index}, 'sodium', this.value)" class="table-input !text-slate-500"></td>
-                    <td class="py-4 px-2">
-                        <button onclick="removeFoodRow(${index})" class="text-slate-300 hover:text-rose-600 transition-colors">
-                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"></path></svg>
-                        </button>
-                    </td>
-                `;
-                body.appendChild(tr);
-            });
-            updateFoodAnalysis();
-        }
-
-        // --- HANDLERS ---
-        function addFoodRow() {
-            foodItems.push({ name: "Nouvel aliment", kcal: 0, weight: 0, carbs: 0, fats: 0, proteins: 0, sodium: 0, checked: true });
-            renderFoodTable();
-        }
-        function removeFoodRow(index) {
-            foodItems.splice(index, 1);
-            renderFoodTable();
-        }
-        function toggleItem(index) {
-            foodItems[index].checked = !foodItems[index].checked;
-            renderFoodTable();
-        }
-        function updateItem(index, key, value) {
-            foodItems[index][key] = key === 'name' ? value : (parseFloat(value) || 0);
-            updateFoodAnalysis();
-        }
-
-        const ids = ['weight', 'age', 'distance', 'elevation', 'packWeight', 'terrain', 'hours', 'temp', 'gender'];
-        ids.forEach(id => document.getElementById(id).addEventListener('input', calculate));
-        
-        window.onload = () => {
+        function init() {
+            updateDayCount();
+            loadProfileUI();
+            renderFoodLists();
             calculate();
-            renderFoodTable();
-        };
+        }
+
+        function updateDayCount() {
+            const count = parseInt(document.getElementById('total-days').value) || 1;
+            const currentLen = days.length;
+            if (count > currentLen) {
+                for (let i = currentLen; i < count; i++) {
+                    // Chaque jour contient un objet "selectedFood" : mapping foodId -> quantité (0 si non sélectionné)
+                    days.push({ 
+                        dist: 15, time: 5, elevPos: 800, elevNeg: 800, terrain: 1.2, 
+                        loads: [10, 8],
+                        selectedFood: [{}, {}] 
+                    });
+                }
+            } else if (count < currentLen) {
+                days = days.slice(0, count);
+                if (currentDayIdx >= count) currentDayIdx = count - 1;
+            }
+            renderDayTabs();
+            loadDayData();
+        }
+
+        function renderDayTabs() {
+            const container = document.getElementById('day-tabs');
+            container.innerHTML = '';
+            days.forEach((_, i) => {
+                const btn = document.createElement('button');
+                btn.innerText = `Jour ${i + 1}`;
+                btn.className = `day-tab px-4 py-2 whitespace-nowrap ${currentDayIdx === i ? 'tab-active' : ''}`;
+                btn.onclick = () => { saveCurrentDay(); currentDayIdx = i; renderDayTabs(); loadDayData(); renderFoodLists(); };
+                container.appendChild(btn);
+            });
+        }
+
+        function loadDayData() {
+            const d = days[currentDayIdx];
+            document.getElementById('d-dist').value = d.dist;
+            document.getElementById('d-time').value = d.time;
+            document.getElementById('d-elev-pos').value = d.elevPos;
+            document.getElementById('d-elev-neg').value = d.elevNeg;
+            document.getElementById('d-terrain').value = d.terrain;
+            document.getElementById('d-load-0').value = d.loads[0];
+            document.getElementById('d-load-1').value = d.loads[1];
+            calculate();
+        }
+
+        function saveCurrentDay() {
+            days[currentDayIdx].dist = parseFloat(document.getElementById('d-dist').value) || 0;
+            days[currentDayIdx].time = parseFloat(document.getElementById('d-time').value) || 0;
+            days[currentDayIdx].elevPos = parseFloat(document.getElementById('d-elev-pos').value) || 0;
+            days[currentDayIdx].elevNeg = parseFloat(document.getElementById('d-elev-neg').value) || 0;
+            days[currentDayIdx].terrain = parseFloat(document.getElementById('d-terrain').value) || 1;
+            days[currentDayIdx].loads[0] = parseFloat(document.getElementById('d-load-0').value) || 0;
+            days[currentDayIdx].loads[1] = parseFloat(document.getElementById('d-load-1').value) || 0;
+        }
+
+        function switchProfile(idx) {
+            currentProfileIdx = idx;
+            document.getElementById('btn-p0').classList.toggle('active', idx === 0);
+            document.getElementById('btn-p1').classList.toggle('active', idx === 1);
+            loadProfileUI();
+        }
+
+        function loadProfileUI() {
+            const p = profiles[currentProfileIdx];
+            document.getElementById('p-name').value = p.name;
+            document.getElementById('p-gender').value = p.gender;
+            document.getElementById('p-age').value = p.age;
+            document.getElementById('p-height').value = p.height;
+            document.getElementById('p-weight').value = p.weight;
+            document.getElementById('p-level').value = p.level;
+        }
+
+        function updateProfileData() {
+            const p = profiles[currentProfileIdx];
+            p.name = document.getElementById('p-name').value;
+            p.gender = document.getElementById('p-gender').value;
+            p.age = parseInt(document.getElementById('p-age').value) || 30;
+            p.height = parseInt(document.getElementById('p-height').value) || 170;
+            p.weight = parseFloat(document.getElementById('p-weight').value) || 70;
+            p.level = parseInt(document.getElementById('p-level').value) || 5;
+            
+            document.getElementById('btn-p0').innerText = profiles[0].name;
+            document.getElementById('btn-p1').innerText = profiles[1].name;
+            document.getElementById('label-load-0').innerText = `Sac ${profiles[0].name} (kg)`;
+            document.getElementById('label-load-1').innerText = `Sac ${profiles[1].name} (kg)`;
+            document.getElementById('food-title-0').innerText = profiles[0].name;
+            document.getElementById('food-title-1').innerText = profiles[1].name;
+            calculate();
+        }
+
+        function addFoodItem(pIdx) {
+            const newId = 'f-' + Math.random().toString(36).substr(2, 9);
+            profiles[pIdx].food.push({ id: newId, label: "Nouvel aliment", kcal: 0, prot: 0, gluc: 0, lip: 0, sod: 0, fib: 0 });
+            renderFoodLists();
+            calculate();
+        }
+
+        function updateFoodItem(pIdx, fIdx, field, value) {
+            profiles[pIdx].food[fIdx][field] = (field === 'label') ? value : (parseFloat(value) || 0);
+            calculate();
+        }
+
+        function toggleFoodSelection(pIdx, fId) {
+            const currentDay = days[currentDayIdx];
+            const selections = currentDay.selectedFood[pIdx];
+            
+            if (selections[fId] > 0) {
+                delete selections[fId];
+            } else {
+                selections[fId] = 1;
+            }
+            renderFoodLists();
+            calculate();
+        }
+
+        function updateFoodQuantity(pIdx, fId, qty) {
+            const selections = days[currentDayIdx].selectedFood[pIdx];
+            const val = parseInt(qty);
+            if (val > 0) {
+                selections[fId] = val;
+            } else {
+                delete selections[fId];
+            }
+            renderFoodLists();
+            calculate();
+        }
+
+        function removeFoodItem(pIdx, fIdx) {
+            const fId = profiles[pIdx].food[fIdx].id;
+            profiles[pIdx].food.splice(fIdx, 1);
+            days.forEach(day => {
+                delete day.selectedFood[pIdx][fId];
+            });
+            renderFoodLists();
+            calculate();
+        }
+
+        function renderFoodLists() {
+            const currentDay = days[currentDayIdx];
+            [0, 1].forEach(pIdx => {
+                const list = document.getElementById(`food-list-${pIdx}`);
+                list.innerHTML = '';
+                profiles[pIdx].food.forEach((item, fIdx) => {
+                    const selections = currentDay.selectedFood[pIdx];
+                    const qty = selections[item.id] || 0;
+                    const isSelected = qty > 0;
+                    
+                    const div = document.createElement('div');
+                    div.className = `nutri-grid bg-white p-1 rounded border border-gray-100 hover:border-gray-300 transition-colors ${isSelected ? 'item-selected' : ''}`;
+                    div.innerHTML = `
+                        <div class="flex justify-center">
+                            <input type="checkbox" ${isSelected ? 'checked' : ''} onchange="toggleFoodSelection(${pIdx}, '${item.id}')" class="w-5 h-5 accent-green-700 cursor-pointer">
+                        </div>
+                        <div>
+                            <input type="number" value="${qty}" min="0" oninput="updateFoodQuantity(${pIdx}, '${item.id}', this.value)" class="text-center bg-transparent" placeholder="0">
+                        </div>
+                        <input type="text" value="${item.label}" oninput="updateFoodItem(${pIdx}, ${fIdx}, 'label', this.value)" placeholder="Nom">
+                        <input type="number" value="${item.kcal}" oninput="updateFoodItem(${pIdx}, ${fIdx}, 'kcal', this.value)" placeholder="kcal">
+                        <input type="number" value="${item.prot}" oninput="updateFoodItem(${pIdx}, ${fIdx}, 'prot', this.value)" placeholder="P">
+                        <input type="number" value="${item.gluc}" oninput="updateFoodItem(${pIdx}, ${fIdx}, 'gluc', this.value)" placeholder="G">
+                        <input type="number" value="${item.lip}" oninput="updateFoodItem(${pIdx}, ${fIdx}, 'lip', this.value)" placeholder="L">
+                        <input type="number" value="${item.sod}" oninput="updateFoodItem(${pIdx}, ${fIdx}, 'sod', this.value)" placeholder="Na">
+                        <input type="number" value="${item.fib}" oninput="updateFoodItem(${pIdx}, ${fIdx}, 'fib', this.value)" placeholder="Fi">
+                        <button onclick="removeFoodItem(${pIdx}, ${fIdx})" class="text-red-500 font-bold px-2 hover:bg-red-50 rounded">×</button>
+                    `;
+                    list.appendChild(div);
+                });
+            });
+        }
+
+        function calculate() {
+            const d = days[currentDayIdx];
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '';
+
+            profiles.forEach((p, i) => {
+                const load = d.loads[i];
+                const W = p.weight;
+                const L = load;
+                
+                // --- 1. MÉTABOLISME DE BASE (BMR) ---
+                let bmrDay = 0;
+                if (p.gender === "M") {
+                    bmrDay = 88.362 + (13.397 * W) + (4.799 * p.height) - (5.677 * p.age);
+                } else {
+                    bmrDay = 447.593 + (9.247 * W) + (3.098 * p.height) - (4.330 * p.age);
+                }
+                
+                // --- 2. COÛT DE LA MARCHE (PANDOLF MODIFIÉ) ---
+                const timeSec = (d.time || 1) * 3600;
+                const distMeters = d.dist * 1000;
+                const V = distMeters / timeSec; 
+                const grade = (d.elevPos / distMeters) * 100; 
+                const eta = d.terrain;
+
+                const loadTerm = 2.0 * (W + L) * Math.pow(L / W, 2);
+                let metabolicPowerWatts = 1.5 * W + loadTerm + eta * (W + L) * (1.5 * Math.pow(V, 2) + 0.35 * V * grade);
+                const kcalPerHourMovement = metabolicPowerWatts * 0.860;
+                
+                // --- 3. DÉPENSE TOTALE ---
+                const restHours = 24 - (d.time || 1);
+                const bmrPerHour = bmrDay / 24;
+                const totalNeeded = (bmrPerHour * restHours) + (kcalPerHourMovement * (d.time || 1));
+
+                // --- 4. NUTRITION (Somme des items * quantités pour le jour) ---
+                const daySelections = d.selectedFood[i];
+                const totals = p.food.reduce((acc, cur) => {
+                    const qty = daySelections[cur.id] || 0;
+                    if (qty > 0) {
+                        acc.kcal += cur.kcal * qty; 
+                        acc.prot += cur.prot * qty; 
+                        acc.gluc += cur.gluc * qty; 
+                        acc.lip += cur.lip * qty; 
+                        acc.sod += cur.sod * qty; 
+                        acc.fib += cur.fib * qty;
+                    }
+                    return acc;
+                }, { kcal: 0, prot: 0, gluc: 0, lip: 0, sod: 0, fib: 0 });
+
+                const balance = totals.kcal - totalNeeded;
+                const wattsPerKg = metabolicPowerWatts / W;
+                const intensity = Math.min(100, (wattsPerKg / (p.level * 1.2)) * 100);
+
+                resultsDiv.innerHTML += `
+                    <div class="card p-6 border-t-4 ${i === 0 ? 'border-green-600' : 'border-blue-500'}">
+                        <div class="flex justify-between items-start mb-4">
+                            <div>
+                                <h3 class="text-xl font-bold">${p.name} <span class="text-xs font-normal text-gray-400">(${p.gender})</span></h3>
+                                <p class="text-[10px] text-gray-500 uppercase font-bold tracking-tight">Moteur Pandolf + H.B.</p>
+                            </div>
+                            <span class="text-xs px-2 py-1 bg-gray-100 rounded">Jour ${currentDayIdx + 1}</span>
+                        </div>
+                        
+                        <div class="grid grid-cols-2 gap-4 mb-4 text-center">
+                            <div class="bg-gray-50 p-2 rounded">
+                                <span class="block text-[10px] uppercase text-gray-500 font-bold">Besoins (24h)</span>
+                                <span class="font-bold text-lg">${Math.round(totalNeeded)}</span> <span class="text-xs">kcal</span>
+                            </div>
+                            <div class="bg-gray-50 p-2 rounded">
+                                <span class="block text-[10px] uppercase text-gray-500 font-bold">Apports (${Object.values(daySelections).reduce((a, b) => a + b, 0)} items)</span>
+                                <span class="font-bold text-lg text-blue-600">${Math.round(totals.kcal)}</span> <span class="text-xs">kcal</span>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-3 gap-2 mb-4 text-[10px] text-center">
+                            <div class="border rounded p-1"><strong>PROT:</strong> ${Math.round(totals.prot)}g</div>
+                            <div class="border rounded p-1"><strong>GLUC:</strong> ${Math.round(totals.gluc)}g</div>
+                            <div class="border rounded p-1"><strong>LIP:</strong> ${Math.round(totals.lip)}g</div>
+                            <div class="border rounded p-1"><strong>SOD:</strong> ${Math.round(totals.sod)}mg</div>
+                            <div class="border rounded p-1"><strong>FIB:</strong> ${Math.round(totals.fib)}g</div>
+                            <div class="border rounded p-1 ${balance >= 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'} font-bold">
+                                BAL: ${Math.round(balance)}
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between text-[10px] mb-1">
+                                <span>Indice de charge physiologique</span>
+                                <span>${Math.round(intensity)}%</span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-1.5">
+                                <div class="h-1.5 rounded-full ${intensity > 85 ? 'bg-red-500' : intensity > 60 ? 'bg-orange-400' : 'bg-green-600'}" style="width: ${intensity}%"></div>
+                            </div>
+                            <p class="text-[9px] text-gray-400 mt-2 italic text-center">
+                                Vitesse: ${(V*3.6).toFixed(1)} km/h | Pente: ${grade.toFixed(1)}% | Puissance: ${Math.round(metabolicPowerWatts)}W
+                            </p>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        window.onload = init;
     </script>
 </body>
 </html>
