@@ -75,7 +75,7 @@
 
         <!-- VUE INDIVIDUELLE (PROFIL + ALIMENTS) -->
         <div id="individual-view" class="space-y-6">
-            <!-- État Civil & Physique -->
+            <!-- Paramètres Physiques -->
             <section class="card p-6">
                 <h2 class="text-xl font-semibold mb-4 flex items-center gap-2">👤 Paramètres Physiques</h2>
                 <div id="profile-form" class="grid grid-cols-2 md:grid-cols-6 gap-3 bg-gray-50 p-4 rounded-lg">
@@ -163,14 +163,21 @@
                 <div id="food-list-current" class="space-y-2"></div>
             </section>
 
-            <!-- Résumé Local (Directement dans le profil) -->
-            <section id="local-performance-view" class="grid grid-cols-1 gap-6"></section>
+            <!-- Résumé Local (Affiché dans le profil) -->
+            <div id="local-performance-view"></div>
         </div>
 
         <!-- VUE SYNTHÈSE -->
         <div id="summary-view" class="hidden space-y-6">
             <div id="summary-day-tabs" class="flex overflow-x-auto gap-2 mb-6 pb-2 border-b"></div>
-            <div id="results-summary" class="grid grid-cols-1 md:grid-cols-2 gap-6 pb-10"></div>
+            
+            <!-- Section Résultats Performance -->
+            <h3 class="text-xl font-bold text-gray-800 px-2">📊 Performance Comparative</h3>
+            <div id="results-summary" class="grid grid-cols-1 md:grid-cols-2 gap-6"></div>
+
+            <!-- Section Détail Nourriture Synthèse -->
+            <h3 class="text-xl font-bold text-gray-800 px-2 mt-8">🍱 Détail des menus (Jour actuel)</h3>
+            <div id="food-summary-grid" class="grid grid-cols-1 md:grid-cols-2 gap-6 pb-12"></div>
         </div>
 
     </div>
@@ -178,7 +185,7 @@
     <script>
         let currentProfileIdx = 0;
         let currentDayIdx = 0;
-        let activeMainView = 'p0'; // 'p0', 'p1', 'summary'
+        let activeMainView = 'p0';
 
         const profiles = [
             { 
@@ -228,7 +235,7 @@
             const count = parseInt(document.getElementById('total-days').value) || 1;
             while (days.length < count) {
                 days.push({ 
-                    dist: 15, time: 5, elevPos: 800, elevNeg: 800, terrain: 1.2, 
+                    dist: 15, time: 5, elevPos: 800, terrain: 1.2, 
                     loads: [10, 8],
                     selectedFood: [{}, {}] 
                 });
@@ -249,8 +256,8 @@
                     saveCurrentDay(); 
                     currentDayIdx = i; 
                     renderDayTabs(containerId); 
-                    if (activeMainView === 'summary') calculate();
-                    else { loadDayData(); renderFoodLists(); calculate(); }
+                    calculate();
+                    if (activeMainView !== 'summary') { loadDayData(); renderFoodLists(); }
                 };
                 container.appendChild(btn);
             });
@@ -265,7 +272,6 @@
             document.getElementById('p-weight').value = p.weight;
             document.getElementById('p-level').value = p.level;
             document.getElementById('label-load-current').innerText = `Poids du sac de ${p.name} (kg)`;
-            
             document.getElementById('nav-p0').innerText = profiles[0].name;
             document.getElementById('nav-p1').innerText = profiles[1].name;
         }
@@ -360,10 +366,12 @@
         function calculate() {
             const d = days[currentDayIdx];
             const resultsSummaryDiv = document.getElementById('results-summary');
+            const foodSummaryGrid = document.getElementById('food-summary-grid');
             const localPerformanceDiv = document.getElementById('local-performance-view');
             
-            resultsSummaryDiv.innerHTML = '';
-            if (activeMainView !== 'summary') localPerformanceDiv.innerHTML = '';
+            if (resultsSummaryDiv) resultsSummaryDiv.innerHTML = '';
+            if (foodSummaryGrid) foodSummaryGrid.innerHTML = '';
+            if (localPerformanceDiv) localPerformanceDiv.innerHTML = '';
 
             profiles.forEach((p, i) => {
                 const load = d.loads[i];
@@ -377,7 +385,7 @@
                 const timeSec = (d.time || 1) * 3600;
                 const distM = d.dist * 1000;
                 const V = distM / timeSec; 
-                const grade = (d.elevPos / distM) * 100; 
+                const grade = (d.elevPos / (distM || 1)) * 100; 
 
                 const loadTerm = 2.0 * (W + L) * Math.pow(L / W, 2);
                 let metabolicPowerWatts = 1.5 * W + loadTerm + d.terrain * (W + L) * (1.5 * Math.pow(V, 2) + 0.35 * V * grade);
@@ -385,11 +393,13 @@
                 const totalNeeded = ((bmrDay / 24) * (24 - d.time)) + (kcalPerHourMovement * d.time);
 
                 const daySelections = d.selectedFood[i];
+                let selectedItemsList = [];
                 const totals = p.food.reduce((acc, cur) => {
                     const qty = daySelections[cur.id] || 0;
                     if (qty > 0) {
                         acc.kcal += cur.kcal * qty; acc.prot += cur.prot * qty; acc.gluc += cur.gluc * qty; 
                         acc.lip += cur.lip * qty; acc.sod += cur.sod * qty; acc.fib += cur.fib * qty;
+                        selectedItemsList.push({ label: cur.label, qty: qty, kcalTotal: Math.round(cur.kcal * qty) });
                     }
                     return acc;
                 }, { kcal: 0, prot: 0, gluc: 0, lip: 0, sod: 0, fib: 0 });
@@ -401,7 +411,7 @@
                     <div class="card p-5 border-t-4 ${i === 0 ? 'border-green-600' : 'border-blue-500'}">
                         <div class="flex justify-between items-center mb-4">
                             <h4 class="font-bold text-lg">${p.name}</h4>
-                            <span class="text-xs font-bold text-gray-400 uppercase">Résultats Jour ${currentDayIdx+1}</span>
+                            <span class="text-xs font-bold text-gray-400 uppercase">Résultats J${currentDayIdx+1}</span>
                         </div>
                         <div class="space-y-3">
                             <div class="grid grid-cols-2 gap-2 text-center mb-4">
@@ -415,8 +425,8 @@
                                 </div>
                             </div>
                             
-                            <div class="flex justify-between items-center px-2 py-1 border rounded ${balance >= 0 ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}">
-                                <span class="text-sm font-medium">Balance énergétique</span>
+                            <div class="flex justify-between items-center px-3 py-2 border rounded ${balance >= 0 ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}">
+                                <span class="text-sm font-medium">Balance</span>
                                 <span class="font-bold ${balance >= 0 ? 'text-green-700' : 'text-red-600'}">${Math.round(balance)} kcal</span>
                             </div>
 
@@ -434,16 +444,40 @@
                                     <span>FATIGUE PHYSIOLOGIQUE</span>
                                     <span>${Math.round(intensity)}%</span>
                                 </div>
-                                <div class="w-full bg-gray-100 rounded-full h-2">
-                                    <div class="h-2 rounded-full ${intensity > 80 ? 'bg-red-500' : intensity > 60 ? 'bg-orange-400' : 'bg-green-500'}" style="width: ${intensity}%"></div>
+                                <div class="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
+                                    <div class="h-2 ${intensity > 80 ? 'bg-red-500' : intensity > 60 ? 'bg-orange-400' : 'bg-green-500'}" style="width: ${intensity}%"></div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 `;
 
+                // Construction de la liste des aliments pour la synthèse
+                let foodListHTML = `
+                    <div class="card p-5 border-l-4 ${i === 0 ? 'border-green-600' : 'border-blue-500'}">
+                        <h4 class="font-bold mb-3 border-b pb-1">Menu de ${p.name}</h4>
+                        ${selectedItemsList.length > 0 ? `
+                            <table class="w-full text-sm">
+                                <thead class="text-left text-[10px] text-gray-500 uppercase">
+                                    <tr><th class="pb-2">Aliment</th><th class="pb-2 text-center">Qté</th><th class="pb-2 text-right">Kcal</th></tr>
+                                </thead>
+                                <tbody>
+                                    ${selectedItemsList.map(item => `
+                                        <tr class="border-t border-gray-50">
+                                            <td class="py-2">${item.label}</td>
+                                            <td class="py-2 text-center">${item.qty}</td>
+                                            <td class="py-2 text-right font-medium">${item.kcalTotal}</td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        ` : '<p class="text-gray-400 italic text-sm text-center py-4">Aucun aliment sélectionné</p>'}
+                    </div>
+                `;
+
                 if (activeMainView === 'summary') {
                     resultsSummaryDiv.innerHTML += resultHTML;
+                    foodSummaryGrid.innerHTML += foodListHTML;
                 } else if (i === currentProfileIdx) {
                     localPerformanceDiv.innerHTML = resultHTML;
                 }
