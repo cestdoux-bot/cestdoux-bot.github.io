@@ -67,6 +67,30 @@
             overflow: hidden;
             position: relative;
         }
+
+        /* Style personnalisé pour le slider Terrain */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 8px;
+            cursor: pointer;
+            background: #e2e8f0;
+            border-radius: 4px;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            height: 20px;
+            width: 20px;
+            border-radius: 50%;
+            background: var(--adventure);
+            cursor: pointer;
+            -webkit-appearance: none;
+            margin-top: -6px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
     </style>
 </head>
 <body class="antialiased">
@@ -176,14 +200,16 @@
                                         <input type="number" id="d-elev-neg" oninput="saveCurrentDay(); calculate()" class="input-field w-full text-red-700 font-bold">
                                     </div>
                                 </div>
-                                <div class="space-y-1">
-                                    <label class="text-[10px] font-bold text-slate-500 uppercase">Coefficient de terrain</label>
-                                    <select id="d-terrain" onchange="saveCurrentDay(); calculate()" class="input-field w-full">
-                                        <option value="1.0">Macadam / Route (1.0)</option>
-                                        <option value="1.2">Sentier balisé (1.2)</option>
-                                        <option value="1.5">Hors-piste / Brousse (1.5)</option>
-                                        <option value="2.1">Sable mou / Neige (2.1)</option>
-                                    </select>
+                                
+                                <div class="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-100">
+                                    <div class="flex justify-between items-center">
+                                        <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Coefficient de terrain</label>
+                                        <span id="terrain-value-display" class="bg-orange-500 text-white px-2 py-0.5 rounded text-xs font-bold italic">1.2</span>
+                                    </div>
+                                    <input type="range" id="d-terrain" min="1.0" max="2.5" step="0.1" value="1.2" 
+                                           oninput="handleTerrainInput(this.value)" 
+                                           class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
+                                    <div id="terrain-desc" class="text-[11px] font-medium text-slate-400 italic text-center min-h-[1rem]">Sentier battu / Prairies</div>
                                 </div>
                             </div>
                             <div class="bg-slate-50 rounded-2xl p-6 border border-slate-100 flex flex-col justify-center">
@@ -269,6 +295,25 @@
             switchMainView('p0');
         }
 
+        // LOGIQUE DU SLIDER TERRAIN
+        function getTerrainLabel(val) {
+            const v = parseFloat(val);
+            if (v <= 1.0) return "Route goudronnée / Billard";
+            if (v <= 1.1) return "Chemin de terre / Graviers";
+            if (v <= 1.2) return "Sentier battu / Prairies";
+            if (v <= 1.5) return "Forêt / Herbes hautes / Sable";
+            if (v <= 1.8) return "Eboulis / Broussailles";
+            if (v <= 2.1) return "Sable mou / Neige fraîche";
+            return "Marécage / Terrain très difficile";
+        }
+
+        function handleTerrainInput(val) {
+            document.getElementById('terrain-value-display').innerText = val;
+            document.getElementById('terrain-desc').innerText = getTerrainLabel(val);
+            saveCurrentDay();
+            calculate();
+        }
+
         function switchMainView(view) {
             activeMainView = view;
             const indView = document.getElementById('individual-view');
@@ -347,7 +392,13 @@
             document.getElementById('d-time').value = d.time;
             document.getElementById('d-elev-pos').value = d.elevPos;
             document.getElementById('d-elev-neg').value = d.elevNeg;
-            document.getElementById('d-terrain').value = d.terrain;
+            
+            // MAJ du Slider
+            const slider = document.getElementById('d-terrain');
+            slider.value = d.terrain;
+            document.getElementById('terrain-value-display').innerText = d.terrain;
+            document.getElementById('terrain-desc').innerText = getTerrainLabel(d.terrain);
+            
             document.getElementById('d-load-current').value = d.loads[currentProfileIdx];
         }
 
@@ -492,7 +543,6 @@
             if (localPerformanceDiv) localPerformanceDiv.innerHTML = '';
             if (grocerySummaryGrid) grocerySummaryGrid.innerHTML = '';
 
-            // 1. CALCUL DU POIDS TOTAL DE NOURRITURE PAR PROFIL (SUR TOUT LE TREK)
             let totalFoodWeightByProfile = profiles.map((p, pIdx) => {
                 let totalGrams = 0;
                 days.forEach(day => {
@@ -505,7 +555,6 @@
                 return totalGrams;
             });
 
-            // Consolidation de l'épicerie pour toute la durée
             let profileGroceries = profiles.map(() => ({}));
             days.forEach((day) => {
                 profiles.forEach((p, pIdx) => {
@@ -524,7 +573,6 @@
                 const W = p.weight || 1;
                 const baseSacPoids = d.loads[i] || 0;
                 
-                // 2. CALCUL DE LA NOURRITURE RESTANTE POUR LE JOUR COURANT (DÉGRESSIF)
                 let consumedWeightUntilToday = 0;
                 for (let dayStep = 0; dayStep < currentDayIdx; dayStep++) {
                     const selections = days[dayStep].selectedFood[i];
@@ -535,11 +583,8 @@
                 }
                 
                 const foodWeightRemainingKg = (totalFoodWeightByProfile[i] - consumedWeightUntilToday) / 1000;
-                
-                // LA CHARGE L EST MAINTENANT LE POIDS DU SAC FIXE + TOUTE LA NOURRITURE RESTANTE
                 const L = baseSacPoids + foodWeightRemainingKg;
 
-                // Calculs nutritionnels du jour courant pour affichage
                 const daySelections = d.selectedFood[i];
                 let selectedItemsList = [];
                 let currentDayFoodWeightGrams = 0;
@@ -554,7 +599,6 @@
                     return acc;
                 }, { kcal: 0, prot: 0, gluc: 0, lip: 0, sod: 0, fib: 0 });
 
-                // Formule de Pandolf
                 let bmrDay = (10 * W) + (6.25 * p.height) - (5 * p.age);
                 bmrDay += (p.gender === "M") ? 5 : -161;
                 
