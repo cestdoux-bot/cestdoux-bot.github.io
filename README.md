@@ -33,9 +33,9 @@
             background-color: #f8fafc;
             border: 2px solid transparent;
             border-radius: 0.75rem;
-            padding: 0.6rem 1rem;
+            padding: 0.5rem 0.6rem;
             transition: all 0.2s;
-            font-size: 0.95rem;
+            font-size: 0.875rem;
         }
         .input-field:focus {
             outline: none;
@@ -43,18 +43,47 @@
             background-color: white;
             box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.1);
         }
+
+        /* Style spécifique pour le slider Terrain */
+        .terrain-slider {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 6px;
+            background: #e2e8f0;
+            border-radius: 5px;
+            outline: none;
+        }
+        .terrain-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            background: var(--adventure);
+            cursor: pointer;
+            border-radius: 50%;
+            border: 2px solid white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
         .tab-active {
             color: var(--adventure);
             border-bottom: 2px solid var(--adventure);
         }
         .nutri-grid {
             display: grid;
-            grid-template-columns: 2.5rem 4rem 2fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr auto;
-            gap: 0.75rem;
+            grid-template-columns: 2.5rem 3.5rem 2fr 1fr 1fr 0.8fr 0.8fr 0.8fr 0.8fr 0.8fr auto;
+            gap: 0.5rem;
             align-items: center;
         }
+        @media (max-width: 1280px) {
+            .nutri-grid { font-size: 0.75rem; }
+        }
         @media (max-width: 1024px) {
-            .nutri-grid { grid-template-columns: auto auto 1fr 1fr; }
+            .nutri-grid { 
+                grid-template-columns: 2.5rem 3.5rem 1.5fr 1fr 1fr;
+                gap: 0.4rem;
+            }
+            .nutri-grid > div:nth-child(n+6):nth-child(-n+10) { display: none; }
         }
         .sticky-results {
             position: sticky;
@@ -66,30 +95,6 @@
             background: #e2e8f0;
             overflow: hidden;
             position: relative;
-        }
-
-        /* Style personnalisé pour le slider Terrain */
-        input[type=range] {
-            -webkit-appearance: none;
-            width: 100%;
-            background: transparent;
-        }
-        input[type=range]::-webkit-slider-runnable-track {
-            width: 100%;
-            height: 8px;
-            cursor: pointer;
-            background: #e2e8f0;
-            border-radius: 4px;
-        }
-        input[type=range]::-webkit-slider-thumb {
-            height: 20px;
-            width: 20px;
-            border-radius: 50%;
-            background: var(--adventure);
-            cursor: pointer;
-            -webkit-appearance: none;
-            margin-top: -6px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
         }
     </style>
 </head>
@@ -200,16 +205,15 @@
                                         <input type="number" id="d-elev-neg" oninput="saveCurrentDay(); calculate()" class="input-field w-full text-red-700 font-bold">
                                     </div>
                                 </div>
-                                
                                 <div class="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-100">
                                     <div class="flex justify-between items-center">
-                                        <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Coefficient de terrain</label>
-                                        <span id="terrain-value-display" class="bg-orange-500 text-white px-2 py-0.5 rounded text-xs font-bold italic">1.2</span>
+                                        <label class="text-[10px] font-bold text-slate-500 uppercase">Coefficient de terrain</label>
+                                        <span id="terrain-val-display" class="text-xs font-black text-orange-600 bg-orange-50 px-2 py-0.5 rounded">1.2</span>
                                     </div>
                                     <input type="range" id="d-terrain" min="1.0" max="2.5" step="0.1" value="1.2" 
-                                           oninput="handleTerrainInput(this.value)" 
-                                           class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
-                                    <div id="terrain-desc" class="text-[11px] font-medium text-slate-400 italic text-center min-h-[1rem]">Sentier battu / Prairies</div>
+                                           oninput="updateTerrainLabel(this.value); saveCurrentDay(); calculate()" 
+                                           class="terrain-slider">
+                                    <p id="terrain-desc" class="text-[10px] font-medium text-slate-400 italic leading-tight">Sentier battu / Prairies</p>
                                 </div>
                             </div>
                             <div class="bg-slate-50 rounded-2xl p-6 border border-slate-100 flex flex-col justify-center">
@@ -242,9 +246,19 @@
                     </button>
                 </div>
                 <div class="overflow-x-auto">
-                    <div class="min-w-[800px]">
+                    <div class="min-w-[900px]">
                         <div class="nutri-grid text-[10px] font-black text-slate-400 uppercase mb-4 px-4">
-                            <div class="text-center">Choix</div><div class="text-center">Qté</div><div>Aliment</div><div>Poids(g)</div><div>Kcal</div><div>P(g)</div><div>G(g)</div><div>L(g)</div><div>Na(mg)</div><div>Fib</div><div></div>
+                            <div class="text-center">Choix</div>
+                            <div class="text-center">Qté</div>
+                            <div>Aliment</div>
+                            <div>Poids(g)</div>
+                            <div>Kcal</div>
+                            <div>P(g)</div>
+                            <div>G(g)</div>
+                            <div>L(g)</div>
+                            <div>Na(mg)</div>
+                            <div>Fib</div>
+                            <div></div>
                         </div>
                         <div id="food-list-current" class="space-y-3"></div>
                     </div>
@@ -295,7 +309,7 @@
             switchMainView('p0');
         }
 
-        // LOGIQUE DU SLIDER TERRAIN
+        // --- Logique du Statut Terrain ---
         function getTerrainLabel(val) {
             const v = parseFloat(val);
             if (v <= 1.0) return "Route goudronnée / Billard";
@@ -307,11 +321,9 @@
             return "Marécage / Terrain très difficile";
         }
 
-        function handleTerrainInput(val) {
-            document.getElementById('terrain-value-display').innerText = val;
+        function updateTerrainLabel(val) {
+            document.getElementById('terrain-val-display').innerText = parseFloat(val).toFixed(1);
             document.getElementById('terrain-desc').innerText = getTerrainLabel(val);
-            saveCurrentDay();
-            calculate();
         }
 
         function switchMainView(view) {
@@ -392,14 +404,9 @@
             document.getElementById('d-time').value = d.time;
             document.getElementById('d-elev-pos').value = d.elevPos;
             document.getElementById('d-elev-neg').value = d.elevNeg;
-            
-            // MAJ du Slider
-            const slider = document.getElementById('d-terrain');
-            slider.value = d.terrain;
-            document.getElementById('terrain-value-display').innerText = d.terrain;
-            document.getElementById('terrain-desc').innerText = getTerrainLabel(d.terrain);
-            
+            document.getElementById('d-terrain').value = d.terrain;
             document.getElementById('d-load-current').value = d.loads[currentProfileIdx];
+            updateTerrainLabel(d.terrain);
         }
 
         function saveCurrentDay() {
@@ -476,9 +483,9 @@
                 div.innerHTML = `
                     <div class="flex justify-center">
                         <input type="checkbox" ${isSelected ? 'checked' : ''} onchange="toggleFoodSelection(${pIdx}, '${item.id}')" 
-                               class="w-6 h-6 rounded-md accent-orange-500 cursor-pointer">
+                               class="w-5 h-5 rounded-md accent-orange-500 cursor-pointer">
                     </div>
-                    <div><input type="number" value="${qty}" min="0" oninput="updateFoodQuantity(${pIdx}, '${item.id}', this.value)" class="input-field text-center font-bold px-1"></div>
+                    <div><input type="number" value="${qty}" min="0" oninput="updateFoodQuantity(${pIdx}, '${item.id}', this.value)" class="input-field text-center font-bold px-1 w-full"></div>
                     <div class="relative"><input type="text" value="${item.label}" oninput="updateFoodItem(${pIdx}, ${fIdx}, 'label', this.value)" class="input-field w-full font-medium"></div>
                     <div><input type="number" value="${item.weight}" oninput="updateFoodItem(${pIdx}, ${fIdx}, 'weight', this.value)" class="input-field w-full text-slate-500"></div>
                     <div><input type="number" value="${item.kcal}" oninput="updateFoodItem(${pIdx}, ${fIdx}, 'kcal', this.value)" class="input-field w-full text-slate-800 font-bold"></div>
