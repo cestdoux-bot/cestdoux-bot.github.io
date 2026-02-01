@@ -249,7 +249,13 @@
                 <h3 class="text-2xl font-black text-slate-800">PLAN DE CHARGE NUTRITIONNEL</h3>
                 <div class="h-px flex-1 bg-slate-200"></div>
             </div>
-            <div id="food-summary-grid" class="grid grid-cols-1 md:grid-cols-2 gap-8 pb-20"></div>
+            <div id="food-summary-grid" class="grid grid-cols-1 md:grid-cols-2 gap-8"></div>
+
+            <div class="flex items-center gap-4 mb-2 mt-12">
+                <h3 class="text-2xl font-black text-slate-800 uppercase tracking-tight">Liste d'épicerie globale</h3>
+                <div class="h-px flex-1 bg-slate-200"></div>
+            </div>
+            <div id="grocery-summary-grid" class="grid grid-cols-1 md:grid-cols-2 gap-8 pb-20"></div>
         </div>
     </div>
 
@@ -492,10 +498,30 @@
             const resultsSummaryDiv = document.getElementById('results-summary');
             const foodSummaryGrid = document.getElementById('food-summary-grid');
             const localPerformanceDiv = document.getElementById('local-performance-view');
+            const grocerySummaryGrid = document.getElementById('grocery-summary-grid');
             
             if (resultsSummaryDiv) resultsSummaryDiv.innerHTML = '';
             if (foodSummaryGrid) foodSummaryGrid.innerHTML = '';
             if (localPerformanceDiv) localPerformanceDiv.innerHTML = '';
+            if (grocerySummaryGrid) grocerySummaryGrid.innerHTML = '';
+
+            // Consolidation de l'épicerie pour toute la durée
+            let profileGroceries = profiles.map(() => ({}));
+
+            days.forEach((day) => {
+                profiles.forEach((p, pIdx) => {
+                    const daySelections = day.selectedFood[pIdx];
+                    for (const foodId in daySelections) {
+                        const qty = daySelections[foodId];
+                        if (qty > 0) {
+                            if (!profileGroceries[pIdx][foodId]) {
+                                profileGroceries[pIdx][foodId] = 0;
+                            }
+                            profileGroceries[pIdx][foodId] += qty;
+                        }
+                    }
+                });
+            });
 
             profiles.forEach((p, i) => {
                 const W = p.weight || 1;
@@ -632,9 +658,52 @@
                     </div>
                 `;
 
+                // Rendu de la liste d'épicerie consolidée
+                const groceryItems = profileGroceries[i];
+                const hasGrocery = Object.keys(groceryItems).length > 0;
+                let totalGroceryWeight = 0;
+
+                let groceryListHTML = `
+                    <div class="outdoor-card p-8 border-t-[8px] ${i === 0 ? 'border-green-800' : 'border-blue-800'} shadow-xl">
+                        <div class="flex items-center justify-between mb-6">
+                            <div class="flex items-center gap-3">
+                                <div class="p-2 bg-orange-100 rounded-lg">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f97316" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg>
+                                </div>
+                                <h4 class="font-black text-lg text-slate-800 uppercase tracking-tighter">Épicerie de ${p.name}</h4>
+                            </div>
+                        </div>
+                        <div class="space-y-2">
+                            ${hasGrocery ? `
+                                <div class="grid grid-cols-4 text-[9px] font-black text-slate-400 uppercase pb-2 px-2">
+                                    <div class="col-span-2">Aliment</div><div class="text-right">Quantité</div><div class="text-right">Masse Totale</div>
+                                </div>
+                                ${Object.keys(groceryItems).map(fid => {
+                                    const foodRef = p.food.find(f => f.id === fid) || {label: 'Inconnu', weight: 0};
+                                    const q = groceryItems[fid];
+                                    const wt = q * foodRef.weight;
+                                    totalGroceryWeight += wt;
+                                    return `
+                                        <div class="grid grid-cols-4 py-3 px-2 border-t border-slate-50 items-center">
+                                            <div class="col-span-2 font-bold text-slate-700 text-sm">${foodRef.label}</div>
+                                            <div class="text-right font-black text-orange-600 text-sm">x${q}</div>
+                                            <div class="text-right font-medium text-slate-500 text-sm">${wt >= 1000 ? (wt/1000).toFixed(2)+'kg' : wt+'g'}</div>
+                                        </div>
+                                    `;
+                                }).join('')}
+                                <div class="mt-6 p-4 bg-[#1a2e1a] rounded-xl flex justify-between items-center text-white">
+                                    <span class="text-[10px] font-black uppercase tracking-wider opacity-60">Poids Total à acheter</span>
+                                    <span class="text-lg font-black">${totalGroceryWeight >= 1000 ? (totalGroceryWeight/1000).toFixed(2) + ' kg' : totalGroceryWeight + ' g'}</span>
+                                </div>
+                            ` : '<p class="text-center text-slate-400 italic py-4">Aucun aliment sélectionné sur le trek.</p>'}
+                        </div>
+                    </div>
+                `;
+
                 if (activeMainView === 'summary') {
                     resultsSummaryDiv.innerHTML += resultHTML;
                     foodSummaryGrid.innerHTML += foodListHTML;
+                    grocerySummaryGrid.innerHTML += groceryListHTML;
                 } else if (i === currentProfileIdx) {
                     localPerformanceDiv.innerHTML = resultHTML;
                 }
