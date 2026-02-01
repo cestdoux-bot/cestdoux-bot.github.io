@@ -37,8 +37,8 @@
         }
         .nutri-grid {
             display: grid;
-            grid-template-columns: 2.5rem 3.5rem 2fr 1fr 1fr 1fr 1fr 1fr 1fr auto;
-            gap: 0.5rem;
+            grid-template-columns: 2.5rem 3.5rem 2fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr auto;
+            gap: 0.4rem;
             align-items: center;
         }
         @media (max-width: 768px) {
@@ -54,7 +54,7 @@
 </head>
 <body class="p-4 md:p-8">
 
-    <div class="max-w-6xl mx-auto">
+    <div class="max-w-7xl mx-auto">
         <header class="mb-6 flex flex-col md:flex-row justify-between items-center bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
             <div class="text-left">
                 <h1 class="text-2xl font-bold text-green-900 leading-tight">Calculateur de Randonnée Expert</h1>
@@ -65,7 +65,6 @@
                 </div>
             </div>
 
-            <!-- BOUTONS DE SAUVEGARDE / IMPORT -->
             <div class="flex gap-2 mt-4 md:mt-0">
                 <button onclick="exportData()" class="flex items-center gap-2 px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-all text-xs font-bold uppercase tracking-wider">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
@@ -79,7 +78,6 @@
             </div>
         </header>
 
-        <!-- NAVIGATION PRINCIPALE -->
         <nav class="flex justify-center gap-2 mb-8">
             <button onclick="switchMainView('p0')" id="nav-p0" class="px-6 py-2 rounded-full bg-white border font-bold transition-all shadow-sm">Cédrik</button>
             <button onclick="switchMainView('p1')" id="nav-p1" class="px-6 py-2 rounded-full bg-white border font-bold transition-all shadow-sm">P-A</button>
@@ -88,9 +86,7 @@
             </button>
         </nav>
 
-        <!-- VUE INDIVIDUELLE (PROFIL + ALIMENTS) -->
         <div id="individual-view" class="space-y-6">
-            <!-- Paramètres Physiques -->
             <section class="card p-6">
                 <h2 class="text-xl font-semibold mb-4 flex items-center gap-2">👤 Paramètres Physiques</h2>
                 <div id="profile-form" class="grid grid-cols-2 md:grid-cols-6 gap-3 bg-gray-50 p-4 rounded-lg">
@@ -124,7 +120,6 @@
                 </div>
             </section>
 
-            <!-- Étape & Sac -->
             <section class="card p-6">
                 <div id="day-tabs" class="flex overflow-x-auto gap-2 mb-6 pb-2 border-b"></div>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -165,38 +160,32 @@
                     <div class="bg-green-50 p-4 rounded-lg">
                         <h3 class="font-bold text-green-800 border-b pb-1">Charge du sac</h3>
                         <div class="mt-4">
-                            <label class="block text-sm" id="label-load-current">Poids du sac (hors nourriture)</label>
+                            <label class="block text-sm" id="label-load-current">Poids du sac fixe (kg)</label>
                             <input type="number" id="d-load-current" oninput="saveCurrentDay(); calculate()">
+                            <p class="text-[10px] text-gray-500 mt-1 italic">* Le poids des aliments sera ajouté automatiquement au calcul.</p>
                         </div>
                     </div>
                 </div>
             </section>
 
-            <!-- Garde-manger -->
             <section class="card p-6 border-l-4 border-green-700 overflow-x-auto">
                 <div class="flex justify-between items-center mb-4">
                     <h3 class="text-lg font-bold text-green-900">🍎 Garde-manger personnel</h3>
                     <button onclick="addFoodItem(currentProfileIdx)" class="bg-green-700 text-white px-3 py-1 rounded text-sm hover:bg-green-800">+ Ajouter un aliment</button>
                 </div>
                 <div class="hidden md:grid nutri-grid text-[10px] font-bold text-gray-500 uppercase mb-2 px-1 text-center">
-                    <div>Prévu</div><div>Qté</div><div class="text-left">Aliment</div><div>Kcal/u</div><div>P/u</div><div>G/u</div><div>L/u</div><div>Na/u</div><div>Fi/u</div><div></div>
+                    <div>Prévu</div><div>Qté</div><div class="text-left">Aliment</div><div>Poids(g)</div><div>Kcal/u</div><div>P/u</div><div>G/u</div><div>L/u</div><div>Na/u</div><div>Fi/u</div><div></div>
                 </div>
                 <div id="food-list-current" class="space-y-2"></div>
             </section>
 
-            <!-- Résumé Local (Affiché dans le profil) -->
             <div id="local-performance-view"></div>
         </div>
 
-        <!-- VUE SYNTHÈSE -->
         <div id="summary-view" class="hidden space-y-6">
             <div id="summary-day-tabs" class="flex overflow-x-auto gap-2 mb-6 pb-2 border-b"></div>
-            
-            <!-- Section Résultats Performance -->
             <h3 class="text-xl font-bold text-gray-800 px-2">📊 Performance Comparative</h3>
             <div id="results-summary" class="grid grid-cols-1 md:grid-cols-2 gap-6"></div>
-
-            <!-- Section Détail Nourriture Synthèse -->
             <h3 class="text-xl font-bold text-gray-800 px-2 mt-8">🍱 Détail des menus (Jour actuel)</h3>
             <div id="food-summary-grid" class="grid grid-cols-1 md:grid-cols-2 gap-6 pb-12"></div>
         </div>
@@ -211,11 +200,11 @@
         let profiles = [
             { 
                 name: "Cédrik", gender: "M", age: 30, height: 180, weight: 75, level: 7, 
-                food: [{id: 'f1', label: "Lyophilisé Poulet", kcal: 650, prot: 35, gluc: 80, lip: 15, sod: 1200, fib: 8}] 
+                food: [{id: 'f1', label: "Lyophilisé Poulet", weight: 150, kcal: 650, prot: 35, gluc: 80, lip: 15, sod: 1200, fib: 8}] 
             },
             { 
                 name: "P-A", gender: "M", age: 32, height: 175, weight: 70, level: 6, 
-                food: [{id: 'f2', label: "Pâtes au Pesto", kcal: 580, prot: 18, gluc: 75, lip: 22, sod: 950, fib: 5}] 
+                food: [{id: 'f2', label: "Pâtes au Pesto", weight: 180, kcal: 580, prot: 18, gluc: 75, lip: 22, sod: 950, fib: 5}] 
             }
         ];
 
@@ -292,7 +281,7 @@
             document.getElementById('p-height').value = p.height;
             document.getElementById('p-weight').value = p.weight;
             document.getElementById('p-level').value = p.level;
-            document.getElementById('label-load-current').innerText = `Poids du sac de ${p.name} (kg)`;
+            document.getElementById('label-load-current').innerText = `Poids du sac fixe de ${p.name} (kg)`;
             document.getElementById('nav-p0').innerText = profiles[0].name;
             document.getElementById('nav-p1').innerText = profiles[1].name;
         }
@@ -332,7 +321,16 @@
 
         function addFoodItem(pIdx) {
             const newId = 'f-' + Math.random().toString(36).substr(2, 9);
-            profiles[pIdx].food.push({ id: newId, label: "Nouvel aliment", kcal: 0, prot: 0, gluc: 0, lip: 0, sod: 0, fib: 0 });
+            const defaultKcal = 400;
+            // Automatisation : Initialisation du poids basée sur le ratio kcal / 2.5
+            const defaultWeight = Math.round(defaultKcal / 2.5);
+            profiles[pIdx].food.push({ 
+                id: newId, 
+                label: "Nouvel aliment", 
+                weight: defaultWeight,
+                kcal: defaultKcal, 
+                prot: 0, gluc: 0, lip: 0, sod: 0, fib: 0 
+            });
             renderFoodLists();
             calculate();
         }
@@ -374,6 +372,7 @@
                     <div class="flex justify-center"><input type="checkbox" ${isSelected ? 'checked' : ''} onchange="toggleFoodSelection(${pIdx}, '${item.id}')" class="w-5 h-5 accent-green-700 cursor-pointer"></div>
                     <div><input type="number" value="${qty}" min="0" oninput="updateFoodQuantity(${pIdx}, '${item.id}', this.value)" class="text-center bg-transparent"></div>
                     <input type="text" value="${item.label}" oninput="updateFoodItem(${pIdx}, ${fIdx}, 'label', this.value)">
+                    <input type="number" value="${item.weight}" oninput="updateFoodItem(${pIdx}, ${fIdx}, 'weight', this.value)" placeholder="Poids">
                     <input type="number" value="${item.kcal}" oninput="updateFoodItem(${pIdx}, ${fIdx}, 'kcal', this.value)">
                     <input type="number" value="${item.prot}" oninput="updateFoodItem(${pIdx}, ${fIdx}, 'prot', this.value)">
                     <input type="number" value="${item.gluc}" oninput="updateFoodItem(${pIdx}, ${fIdx}, 'gluc', this.value)">
@@ -386,7 +385,6 @@
             });
         }
 
-        // --- GESTION DE LA SAUVEGARDE ---
         function exportData() {
             saveCurrentDay();
             const fullState = {
@@ -425,9 +423,6 @@
             reader.readAsText(file);
         }
 
-        /**
-         * CALCULS MÉTABOLIQUES AVANCÉS
-         */
         function calculate() {
             const d = days[currentDayIdx];
             const resultsSummaryDiv = document.getElementById('results-summary');
@@ -440,55 +435,57 @@
 
             profiles.forEach((p, i) => {
                 const W = p.weight || 1;
-                const L = d.loads[i] || 0;
+                const fixedLoad = d.loads[i] || 0;
                 
-                // 1. Formule de Mifflin-St Jeor pour le BMR (plus précis que Harris-Benedict)
-                let bmrDay = (10 * W) + (6.25 * p.height) - (5 * p.age);
-                bmrDay += (p.gender === "M") ? 5 : -161;
-                
-                // Données de l'étape
-                const timeSec = (d.time || 1) * 3600;
-                const distM = (d.dist || 0.001) * 1000;
-                const V = distM / timeSec; // Vitesse en m/s
-                
-                // 2. Calcul des pentes séparées (Positives et Négatives)
-                const gradePos = (d.elevPos / distM) * 100;
-                const gradeNeg = (d.elevNeg / distM) * 100;
-
-                // 3. Équation de Santee découplée (Poids total W+L pour l'effort de charge)
-                const loadTerm = 2.0 * (W + L) * Math.pow(L / W, 2);
-                
-                // Effort de base sur plat + impact du terrain
-                const basePower = 1.5 * W + loadTerm;
-                
-                // Effort de montée (travail contre la gravité)
-                const uphillPower = 0.35 * V * gradePos;
-                
-                // Effort de descente (travail excentrique / freinage)
-                const downhillPower = V * (gradeNeg / 3) * 0.3;
-
-                // Puissance métabolique totale (Watts)
-                // Formule de Santee : Base + Terrain * (Vitesse^2 + Pentes)
-                let metabolicPowerWatts = basePower + d.terrain * (W + L) * (1.5 * Math.pow(V, 2) + uphillPower + downhillPower);
-                
-                // Conversion Watts -> Kcal/h
-                const kcalPerHourMovement = metabolicPowerWatts * 0.860;
-                
-                // Total journalier : BMR prorata temps repos + Effort prorata temps marche
-                const totalNeeded = ((bmrDay / 24) * Math.max(0, 24 - d.time)) + (kcalPerHourMovement * d.time);
-
-                // Analyse de la nourriture
+                // Analyse de la nourriture pour calculer le poids total des consommables
                 const daySelections = d.selectedFood[i];
                 let selectedItemsList = [];
+                let foodWeightGrams = 0;
+                
                 const totals = p.food.reduce((acc, cur) => {
                     const qty = daySelections[cur.id] || 0;
                     if (qty > 0) {
-                        acc.kcal += cur.kcal * qty; acc.prot += cur.prot * qty; acc.gluc += cur.gluc * qty; 
-                        acc.lip += cur.lip * qty; acc.sod += cur.sod * qty; acc.fib += cur.fib * qty;
-                        selectedItemsList.push({ label: cur.label, qty: qty, kcalTotal: Math.round(cur.kcal * qty) });
+                        acc.kcal += cur.kcal * qty; 
+                        acc.prot += cur.prot * qty; 
+                        acc.gluc += cur.gluc * qty; 
+                        acc.lip += cur.lip * qty; 
+                        acc.sod += cur.sod * qty; 
+                        acc.fib += cur.fib * qty;
+                        // Calcul de la masse transportée
+                        foodWeightGrams += (cur.weight || 0) * qty;
+                        selectedItemsList.push({ 
+                            label: cur.label, 
+                            qty: qty, 
+                            weightTotal: Math.round((cur.weight || 0) * qty),
+                            kcalTotal: Math.round(cur.kcal * qty) 
+                        });
                     }
                     return acc;
                 }, { kcal: 0, prot: 0, gluc: 0, lip: 0, sod: 0, fib: 0 });
+
+                // Charge totale L = Charge fixe + Charge nourriture (en kg)
+                const L = fixedLoad + (foodWeightGrams / 1000);
+
+                // 1. Mifflin-St Jeor
+                let bmrDay = (10 * W) + (6.25 * p.height) - (5 * p.age);
+                bmrDay += (p.gender === "M") ? 5 : -161;
+                
+                const timeSec = (d.time || 1) * 3600;
+                const distM = (d.dist || 0.001) * 1000;
+                const V = distM / timeSec; 
+                
+                const gradePos = (d.elevPos / distM) * 100;
+                const gradeNeg = (d.elevNeg / distM) * 100;
+
+                // 3. Santee avec charge totale dynamique
+                const loadTerm = 2.0 * (W + L) * Math.pow(L / W, 2);
+                const basePower = 1.5 * W + loadTerm;
+                const uphillPower = 0.35 * V * gradePos;
+                const downhillPower = V * (gradeNeg / 3) * 0.3;
+
+                let metabolicPowerWatts = basePower + d.terrain * (W + L) * (1.5 * Math.pow(V, 2) + uphillPower + downhillPower);
+                const kcalPerHourMovement = metabolicPowerWatts * 0.860;
+                const totalNeeded = ((bmrDay / 24) * Math.max(0, 24 - d.time)) + (kcalPerHourMovement * d.time);
 
                 const balance = totals.kcal - totalNeeded;
                 const intensity = Math.min(100, ((metabolicPowerWatts/W) / (p.level * 1.2)) * 100);
@@ -497,7 +494,7 @@
                     <div class="card p-5 border-t-4 ${i === 0 ? 'border-green-600' : 'border-blue-500'}">
                         <div class="flex justify-between items-center mb-4">
                             <h4 class="font-bold text-lg">${p.name}</h4>
-                            <span class="text-xs font-bold text-gray-400 uppercase">Résultats J${currentDayIdx+1}</span>
+                            <span class="text-xs font-bold text-gray-400 uppercase">J${currentDayIdx+1} | Charge: ${L.toFixed(1)}kg</span>
                         </div>
                         <div class="space-y-3">
                             <div class="grid grid-cols-2 gap-2 text-center mb-4">
@@ -522,7 +519,7 @@
                                 <div class="bg-white border rounded py-1"><strong>L:</strong> ${Math.round(totals.lip)}g</div>
                                 <div class="bg-white border rounded py-1"><strong>Na:</strong> ${Math.round(totals.sod)}mg</div>
                                 <div class="bg-white border rounded py-1"><strong>Fi:</strong> ${Math.round(totals.fib)}g</div>
-                                <div class="bg-white border rounded py-1"><strong>Sac:</strong> ${L}kg</div>
+                                <div class="bg-white border rounded py-1"><strong>Masse Alim:</strong> ${foodWeightGrams}g</div>
                             </div>
 
                             <div class="mt-4">
@@ -544,13 +541,14 @@
                         ${selectedItemsList.length > 0 ? `
                             <table class="w-full text-sm">
                                 <thead class="text-left text-[10px] text-gray-500 uppercase">
-                                    <tr><th class="pb-2">Aliment</th><th class="pb-2 text-center">Qté</th><th class="pb-2 text-right">Kcal</th></tr>
+                                    <tr><th class="pb-2">Aliment</th><th class="pb-2 text-center">Qté</th><th class="pb-2 text-right">Masse</th><th class="pb-2 text-right">Kcal</th></tr>
                                 </thead>
                                 <tbody>
                                     ${selectedItemsList.map(item => `
                                         <tr class="border-t border-gray-50">
                                             <td class="py-2">${item.label}</td>
                                             <td class="py-2 text-center">${item.qty}</td>
+                                            <td class="py-2 text-right">${item.weightTotal}g</td>
                                             <td class="py-2 text-right font-medium">${item.kcalTotal}</td>
                                         </tr>
                                     `).join('')}
