@@ -3,193 +3,257 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Calculateur Rando Expert - Itinérance & Nutrition</title>
+    <title>Calculateur Rando Expert - Premium Edition</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --primary: #2d5a27;
-            --secondary: #f4f7f1;
+            --forest: #1a2e1a;
+            --adventure: #f97316;
+            --mist: #f8fafc;
         }
         body {
-            background-color: var(--secondary);
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f1f5f9;
+            font-family: 'Inter', sans-serif;
+            color: #334155;
         }
-        .card {
+        .outdoor-card {
             background: white;
-            border-radius: 1rem;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(226, 232, 240, 0.8);
+            border-radius: 1.25rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.02), 0 1px 2px rgba(0,0,0,0.03);
+        }
+        .input-field {
+            background-color: #f8fafc;
+            border: 2px solid transparent;
+            border-radius: 0.75rem;
+            padding: 0.6rem 1rem;
+            transition: all 0.2s;
+            font-size: 0.95rem;
+        }
+        .input-field:focus {
+            outline: none;
+            border-color: var(--adventure);
+            background-color: white;
+            box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.1);
         }
         .tab-active {
-            border-bottom: 3px solid var(--primary);
-            color: var(--primary);
-            font-weight: bold;
+            color: var(--adventure);
+            border-bottom: 2px solid var(--adventure);
         }
         .nav-tab-active {
-            background-color: var(--primary) !important;
+            background-color: var(--forest) !important;
             color: white !important;
-        }
-        input[type="number"], input[type="text"], select {
-            border: 1px solid #e2e8f0;
-            border-radius: 0.5rem;
-            padding: 0.4rem;
-            width: 100%;
-            font-size: 0.875rem;
         }
         .nutri-grid {
             display: grid;
-            grid-template-columns: 2.5rem 3.5rem 2fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr auto;
-            gap: 0.4rem;
+            grid-template-columns: 2.5rem 4rem 2fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr auto;
+            gap: 0.75rem;
             align-items: center;
         }
-        @media (max-width: 768px) {
-            .nutri-grid {
-                grid-template-columns: auto auto 1fr 1fr;
-            }
+        @media (max-width: 1024px) {
+            .nutri-grid { grid-template-columns: auto auto 1fr 1fr; }
         }
-        .item-selected {
-            background-color: #f0fdf4;
-            border-color: #bbf7d0;
+        .sticky-results {
+            position: sticky;
+            top: 2rem;
+        }
+        .custom-progress {
+            height: 0.75rem;
+            border-radius: 1rem;
+            background: #e2e8f0;
+            overflow: hidden;
+            position: relative;
         }
     </style>
 </head>
-<body class="p-4 md:p-8">
+<body class="antialiased">
 
-    <div class="max-w-7xl mx-auto">
-        <header class="mb-6 flex flex-col md:flex-row justify-between items-center bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-            <div class="text-left">
-                <h1 class="text-2xl font-bold text-green-900 leading-tight">Calculateur de Randonnée Expert</h1>
-                <div class="mt-2 flex items-center gap-3">
-                    <label class="text-gray-600 text-sm font-medium">Durée du trek :</label>
-                    <input type="number" id="total-days" onchange="updateDayCount()" value="5" min="1" max="14" class="w-16 text-center h-8">
-                    <span class="text-gray-400 text-xs">jours</span>
+    <div class="max-w-7xl mx-auto px-4 py-6 md:py-10">
+        <!-- HEADER -->
+        <header class="mb-10 flex flex-col md:flex-row justify-between items-center bg-[#1a2e1a] p-8 rounded-[2rem] shadow-xl text-white">
+            <div class="text-left mb-6 md:mb-0">
+                <div class="flex items-center gap-3 mb-1">
+                    <div class="bg-orange-500 p-2 rounded-lg">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="text-white"><path d="M17 11V7a5 5 0 0 0-10 0v4"/><path d="M5 11h14v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7Z"/><circle cx="12" cy="15" r="1"/></svg>
+                    </div>
+                    <h1 class="text-2xl font-extrabold tracking-tight">Expedition Planner <span class="text-orange-400 font-light">Pro</span></h1>
+                </div>
+                <div class="flex items-center gap-4 ml-11">
+                    <label class="text-green-200/70 text-sm font-semibold uppercase tracking-wider">Durée du trek</label>
+                    <div class="flex items-center bg-white/10 rounded-lg p-1">
+                        <input type="number" id="total-days" onchange="updateDayCount()" value="5" min="1" max="14" class="bg-transparent w-12 text-center font-bold text-white focus:outline-none">
+                        <span class="text-xs text-green-300 pr-2 font-medium">jours</span>
+                    </div>
                 </div>
             </div>
 
-            <div class="flex gap-2 mt-4 md:mt-0">
-                <button onclick="exportData()" class="flex items-center gap-2 px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-all text-xs font-bold uppercase tracking-wider">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
-                    Exporter JSON
+            <div class="flex gap-3">
+                <button onclick="exportData()" class="flex items-center gap-2 px-5 py-3 bg-white/10 hover:bg-white/20 text-white rounded-xl transition-all text-xs font-bold uppercase tracking-widest border border-white/10">
+                    Exporter
                 </button>
-                <button onclick="document.getElementById('importFile').click()" class="flex items-center gap-2 px-3 py-2 bg-green-800 hover:bg-green-900 text-white rounded-lg transition-all text-xs font-bold uppercase tracking-wider">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
-                    Importer JSON
+                <button onclick="document.getElementById('importFile').click()" class="flex items-center gap-2 px-5 py-3 bg-orange-500 hover:bg-orange-600 text-white rounded-xl transition-all text-xs font-bold uppercase tracking-widest shadow-lg shadow-orange-900/20">
+                    Importer
                 </button>
                 <input type="file" id="importFile" accept=".json" class="hidden" onchange="importData(event)">
             </div>
         </header>
 
-        <nav class="flex justify-center gap-2 mb-8">
-            <button onclick="switchMainView('p0')" id="nav-p0" class="px-6 py-2 rounded-full bg-white border font-bold transition-all shadow-sm">Cédrik</button>
-            <button onclick="switchMainView('p1')" id="nav-p1" class="px-6 py-2 rounded-full bg-white border font-bold transition-all shadow-sm">P-A</button>
-            <button onclick="switchMainView('summary')" id="nav-summary" class="px-6 py-2 rounded-full bg-white border font-bold transition-all shadow-sm flex items-center gap-2">
-                📊 Synthèse
-            </button>
+        <!-- NAVIGATION SEGMENTÉE -->
+        <nav class="flex justify-center mb-10">
+            <div class="bg-white p-1.5 rounded-2xl shadow-sm inline-flex gap-1 border border-slate-200">
+                <button onclick="switchMainView('p0')" id="nav-p0" class="px-8 py-2.5 rounded-xl font-bold transition-all text-sm">Cédrik</button>
+                <button onclick="switchMainView('p1')" id="nav-p1" class="px-8 py-2.5 rounded-xl font-bold transition-all text-sm">P-A</button>
+                <div class="w-px h-6 bg-slate-200 self-center mx-1"></div>
+                <button onclick="switchMainView('summary')" id="nav-summary" class="px-8 py-2.5 rounded-xl font-bold transition-all text-sm flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
+                    Synthèse
+                </button>
+            </div>
         </nav>
 
-        <div id="individual-view" class="space-y-6">
-            <section class="card p-6">
-                <h2 class="text-xl font-semibold mb-4 flex items-center gap-2">👤 Paramètres Physiques</h2>
-                <div id="profile-form" class="grid grid-cols-2 md:grid-cols-6 gap-3 bg-gray-50 p-4 rounded-lg">
-                    <div>
-                        <label class="block text-[10px] font-bold text-gray-500 uppercase">Nom</label>
-                        <input type="text" id="p-name" oninput="updateProfileData()">
-                    </div>
-                    <div>
-                        <label class="block text-[10px] font-bold text-gray-500 uppercase">Sexe</label>
-                        <select id="p-gender" onchange="updateProfileData()">
-                            <option value="M">Homme</option>
-                            <option value="F">Femme</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-[10px] font-bold text-gray-500 uppercase">Âge</label>
-                        <input type="number" id="p-age" oninput="updateProfileData()">
-                    </div>
-                    <div>
-                        <label class="block text-[10px] font-bold text-gray-500 uppercase">Taille (cm)</label>
-                        <input type="number" id="p-height" oninput="updateProfileData()">
-                    </div>
-                    <div>
-                        <label class="block text-[10px] font-bold text-gray-500 uppercase">Poids (kg)</label>
-                        <input type="number" id="p-weight" oninput="updateProfileData()">
-                    </div>
-                    <div>
-                        <label class="block text-[10px] font-bold text-gray-500 uppercase">Niveau (1-10)</label>
-                        <input type="number" id="p-level" oninput="updateProfileData()" min="1" max="10">
-                    </div>
-                </div>
-            </section>
-
-            <section class="card p-6">
-                <div id="day-tabs" class="flex overflow-x-auto gap-2 mb-6 pb-2 border-b"></div>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <div class="space-y-4">
-                        <h3 class="font-bold text-green-800 border-b pb-1">L'étape du jour</h3>
-                        <div class="grid grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-xs font-medium">Distance (km)</label>
-                                <input type="number" id="d-dist" oninput="saveCurrentDay(); calculate()">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-medium">Temps de marche (h)</label>
-                                <input type="number" id="d-time" oninput="saveCurrentDay(); calculate()" step="0.5">
-                            </div>
+        <!-- VUE INDIVIDUELLE -->
+        <div id="individual-view" class="space-y-8">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                
+                <!-- COLONNE GAUCHE : PARAMÈTRES (2/3) -->
+                <div class="lg:col-span-2 space-y-8">
+                    <!-- PHYSIQUE -->
+                    <section class="outdoor-card p-8">
+                        <div class="flex items-center gap-2 mb-6">
+                            <h2 class="text-lg font-bold text-slate-800 uppercase tracking-tight">Paramètres du randonneur</h2>
+                            <div class="h-px flex-1 bg-slate-100 ml-4"></div>
                         </div>
-                        <div class="grid grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-xs text-green-700 font-medium">Dénivelé + (m)</label>
-                                <input type="number" id="d-elev-pos" oninput="saveCurrentDay(); calculate()">
+                        <div id="profile-form" class="grid grid-cols-2 md:grid-cols-3 gap-6">
+                            <div class="space-y-1.5">
+                                <label class="text-[11px] font-bold text-slate-400 uppercase ml-1">Nom d'explorateur</label>
+                                <input type="text" id="p-name" oninput="updateProfileData()" class="input-field w-full">
                             </div>
-                            <div>
-                                <label class="block text-xs text-red-700 font-medium">Dénivelé - (m)</label>
-                                <input type="number" id="d-elev-neg" oninput="saveCurrentDay(); calculate()">
-                            </div>
-                        </div>
-                        <div class="grid grid-cols-2 gap-4">
-                            <div class="col-span-2">
-                                <label class="block text-xs text-blue-700 font-medium">Terrain</label>
-                                <select id="d-terrain" onchange="saveCurrentDay(); calculate()">
-                                    <option value="1.0">Route (1.0)</option>
-                                    <option value="1.2">Sentier (1.2)</option>
-                                    <option value="1.5">Brousse (1.5)</option>
-                                    <option value="2.1">Sable (2.1)</option>
+                            <div class="space-y-1.5">
+                                <label class="text-[11px] font-bold text-slate-400 uppercase ml-1">Sexe biologique</label>
+                                <select id="p-gender" onchange="updateProfileData()" class="input-field w-full appearance-none">
+                                    <option value="M">Homme</option>
+                                    <option value="F">Femme</option>
                                 </select>
                             </div>
+                            <div class="space-y-1.5">
+                                <label class="text-[11px] font-bold text-slate-400 uppercase ml-1">Âge</label>
+                                <input type="number" id="p-age" oninput="updateProfileData()" class="input-field w-full">
+                            </div>
+                            <div class="space-y-1.5">
+                                <label class="text-[11px] font-bold text-slate-400 uppercase ml-1">Taille (cm)</label>
+                                <input type="number" id="p-height" oninput="updateProfileData()" class="input-field w-full">
+                            </div>
+                            <div class="space-y-1.5">
+                                <label class="text-[11px] font-bold text-slate-400 uppercase ml-1">Poids corporel (kg)</label>
+                                <input type="number" id="p-weight" oninput="updateProfileData()" class="input-field w-full">
+                            </div>
+                            <div class="space-y-1.5">
+                                <label class="text-[11px] font-bold text-slate-400 uppercase ml-1">Niveau physique (1-10)</label>
+                                <input type="number" id="p-level" oninput="updateProfileData()" min="1" max="10" class="input-field w-full">
+                            </div>
                         </div>
+                    </section>
+
+                    <!-- ÉTAPE -->
+                    <section class="outdoor-card p-8">
+                        <div id="day-tabs" class="flex overflow-x-auto gap-6 mb-8 border-b border-slate-100"></div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
+                            <div class="space-y-6">
+                                <h3 class="text-sm font-extrabold text-[#1a2e1a] uppercase tracking-widest flex items-center gap-2">
+                                    <span class="w-2 h-2 bg-orange-500 rounded-full"></span> Topographie de l'étape
+                                </h3>
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div class="space-y-1">
+                                        <label class="text-[10px] font-bold text-slate-500 uppercase">Distance (km)</label>
+                                        <input type="number" id="d-dist" oninput="saveCurrentDay(); calculate()" class="input-field w-full font-semibold">
+                                    </div>
+                                    <div class="space-y-1">
+                                        <label class="text-[10px] font-bold text-slate-500 uppercase">Durée marche (h)</label>
+                                        <input type="number" id="d-time" oninput="saveCurrentDay(); calculate()" step="0.5" class="input-field w-full font-semibold">
+                                    </div>
+                                    <div class="space-y-1">
+                                        <label class="text-[10px] font-bold text-green-600 uppercase italic">Dénivelé + (m)</label>
+                                        <input type="number" id="d-elev-pos" oninput="saveCurrentDay(); calculate()" class="input-field w-full text-green-700 font-bold">
+                                    </div>
+                                    <div class="space-y-1">
+                                        <label class="text-[10px] font-bold text-red-600 uppercase italic">Dénivelé - (m)</label>
+                                        <input type="number" id="d-elev-neg" oninput="saveCurrentDay(); calculate()" class="input-field w-full text-red-700 font-bold">
+                                    </div>
+                                </div>
+                                <div class="space-y-1">
+                                    <label class="text-[10px] font-bold text-slate-500 uppercase">Coefficient de terrain</label>
+                                    <select id="d-terrain" onchange="saveCurrentDay(); calculate()" class="input-field w-full">
+                                        <option value="1.0">Macadam / Route (1.0)</option>
+                                        <option value="1.2">Sentier balisé (1.2)</option>
+                                        <option value="1.5">Hors-piste / Brousse (1.5)</option>
+                                        <option value="2.1">Sable mou / Neige (2.1)</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="bg-slate-50 rounded-2xl p-6 border border-slate-100 flex flex-col justify-center">
+                                <h3 class="text-sm font-extrabold text-[#1a2e1a] uppercase tracking-widest mb-4">Logistique & Charge</h3>
+                                <div class="space-y-4">
+                                    <label class="block text-sm font-medium text-slate-600" id="label-load-current">Poids du sac de base (kg)</label>
+                                    <input type="number" id="d-load-current" oninput="saveCurrentDay(); calculate()" class="input-field w-full bg-white shadow-inner text-lg font-bold">
+                                    <div class="flex items-start gap-2 text-blue-600 bg-blue-50 p-3 rounded-lg border border-blue-100">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mt-0.5"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="16" y2="12"/><line x1="12" x2="12" y1="8" y2="8"/></svg>
+                                        <p class="text-[11px] leading-snug">Le poids de la nourriture sélectionnée est ajouté dynamiquement au calcul.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+
+                <!-- COLONNE DROITE : RÉSULTATS STICKY (1/3) -->
+                <div class="lg:col-span-1">
+                    <div class="sticky-results" id="local-performance-view">
+                        <!-- Rempli par le JS -->
                     </div>
-                    <div class="bg-green-50 p-4 rounded-lg">
-                        <h3 class="font-bold text-green-800 border-b pb-1">Charge du sac</h3>
-                        <div class="mt-4">
-                            <label class="block text-sm" id="label-load-current">Poids du sac fixe (kg)</label>
-                            <input type="number" id="d-load-current" oninput="saveCurrentDay(); calculate()">
-                            <p class="text-[10px] text-gray-500 mt-1 italic">* Le poids des aliments sera ajouté automatiquement au calcul.</p>
+                </div>
+            </div>
+
+            <!-- GARDE-MANGER -->
+            <section class="outdoor-card p-8 border-l-[6px] border-[#1a2e1a]">
+                <div class="flex justify-between items-end mb-8">
+                    <div>
+                        <h3 class="text-xl font-black text-slate-800 uppercase tracking-tight">Ravitaillement Personnel</h3>
+                        <p class="text-slate-400 text-sm">Gérez votre inventaire alimentaire et optimisez vos apports.</p>
+                    </div>
+                    <button onclick="addFoodItem(currentProfileIdx)" class="bg-[#1a2e1a] text-white px-6 py-3 rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-black transition-all shadow-lg">
+                        + Ajouter un aliment
+                    </button>
+                </div>
+                
+                <div class="overflow-x-auto">
+                    <div class="min-w-[800px]">
+                        <div class="nutri-grid text-[10px] font-black text-slate-400 uppercase mb-4 px-4">
+                            <div class="text-center">Choix</div><div class="text-center">Qté</div><div>Aliment</div><div>Poids(g)</div><div>Kcal</div><div>P(g)</div><div>G(g)</div><div>L(g)</div><div>Na(mg)</div><div>Fib</div><div></div>
                         </div>
+                        <div id="food-list-current" class="space-y-3"></div>
                     </div>
                 </div>
             </section>
-
-            <section class="card p-6 border-l-4 border-green-700 overflow-x-auto">
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-lg font-bold text-green-900">🍎 Garde-manger personnel</h3>
-                    <button onclick="addFoodItem(currentProfileIdx)" class="bg-green-700 text-white px-3 py-1 rounded text-sm hover:bg-green-800">+ Ajouter un aliment</button>
-                </div>
-                <div class="hidden md:grid nutri-grid text-[10px] font-bold text-gray-500 uppercase mb-2 px-1 text-center">
-                    <div>Prévu</div><div>Qté</div><div class="text-left">Aliment</div><div>Poids(g)</div><div>Kcal/u</div><div>P/u</div><div>G/u</div><div>L/u</div><div>Na/u</div><div>Fi/u</div><div></div>
-                </div>
-                <div id="food-list-current" class="space-y-2"></div>
-            </section>
-
-            <div id="local-performance-view"></div>
         </div>
 
-        <div id="summary-view" class="hidden space-y-6">
-            <div id="summary-day-tabs" class="flex overflow-x-auto gap-2 mb-6 pb-2 border-b"></div>
-            <h3 class="text-xl font-bold text-gray-800 px-2">📊 Performance Comparative</h3>
-            <div id="results-summary" class="grid grid-cols-1 md:grid-cols-2 gap-6"></div>
-            <h3 class="text-xl font-bold text-gray-800 px-2 mt-8">🍱 Détail des menus (Jour actuel)</h3>
-            <div id="food-summary-grid" class="grid grid-cols-1 md:grid-cols-2 gap-6 pb-12"></div>
-        </div>
+        <!-- VUE SYNTHÈSE -->
+        <div id="summary-view" class="hidden space-y-10">
+            <div id="summary-day-tabs" class="flex overflow-x-auto gap-4 mb-8 border-b border-slate-200"></div>
+            
+            <div class="flex items-center gap-4 mb-2">
+                <h3 class="text-2xl font-black text-slate-800">ANALYSE DE MISSION</h3>
+                <div class="h-px flex-1 bg-slate-200"></div>
+            </div>
+            
+            <div id="results-summary" class="grid grid-cols-1 md:grid-cols-2 gap-8"></div>
 
+            <div class="flex items-center gap-4 mb-2 mt-12">
+                <h3 class="text-2xl font-black text-slate-800">PLAN DE CHARGE NUTRITIONNEL</h3>
+                <div class="h-px flex-1 bg-slate-200"></div>
+            </div>
+            <div id="food-summary-grid" class="grid grid-cols-1 md:grid-cols-2 gap-8 pb-20"></div>
+        </div>
     </div>
 
     <script>
@@ -220,9 +284,10 @@
             const indView = document.getElementById('individual-view');
             const sumView = document.getElementById('summary-view');
             
-            document.getElementById('nav-p0').className = `px-6 py-2 rounded-full border font-bold transition-all shadow-sm ${view === 'p0' ? 'nav-tab-active' : 'bg-white'}`;
-            document.getElementById('nav-p1').className = `px-6 py-2 rounded-full border font-bold transition-all shadow-sm ${view === 'p1' ? 'nav-tab-active' : 'bg-white'}`;
-            document.getElementById('nav-summary').className = `px-6 py-2 rounded-full border font-bold transition-all shadow-sm ${view === 'summary' ? 'nav-tab-active' : 'bg-white'}`;
+            const btnBase = "px-8 py-2.5 rounded-xl font-bold transition-all text-sm";
+            document.getElementById('nav-p0').className = `${btnBase} ${view === 'p0' ? 'bg-[#1a2e1a] text-white shadow-md' : 'text-slate-500 hover:bg-slate-50'}`;
+            document.getElementById('nav-p1').className = `${btnBase} ${view === 'p1' ? 'bg-[#1a2e1a] text-white shadow-md' : 'text-slate-500 hover:bg-slate-50'}`;
+            document.getElementById('nav-summary').className = `${btnBase} ${view === 'summary' ? 'bg-[#1a2e1a] text-white shadow-md' : 'text-slate-500 hover:bg-slate-50'}`;
 
             if (view === 'summary') {
                 indView.classList.add('hidden');
@@ -260,8 +325,8 @@
             container.innerHTML = '';
             days.forEach((_, i) => {
                 const btn = document.createElement('button');
-                btn.innerText = `Jour ${i + 1}`;
-                btn.className = `day-tab px-4 py-2 whitespace-nowrap ${currentDayIdx === i ? 'tab-active' : ''}`;
+                btn.innerText = `Étape ${i + 1}`;
+                btn.className = `day-tab px-6 py-3 whitespace-nowrap text-sm font-bold uppercase tracking-tighter transition-all border-b-2 ${currentDayIdx === i ? 'tab-active' : 'text-slate-400 border-transparent hover:text-slate-600'}`;
                 btn.onclick = () => { 
                     saveCurrentDay(); 
                     currentDayIdx = i; 
@@ -322,7 +387,6 @@
         function addFoodItem(pIdx) {
             const newId = 'f-' + Math.random().toString(36).substr(2, 9);
             const defaultKcal = 400;
-            // Automatisation : Initialisation du poids basée sur le ratio kcal / 2.5
             const defaultWeight = Math.round(defaultKcal / 2.5);
             profiles[pIdx].food.push({ 
                 id: newId, 
@@ -367,19 +431,24 @@
                 const qty = currentDay.selectedFood[pIdx][item.id] || 0;
                 const isSelected = qty > 0;
                 const div = document.createElement('div');
-                div.className = `nutri-grid bg-white p-1 rounded border border-gray-100 transition-colors ${isSelected ? 'item-selected' : ''}`;
+                div.className = `nutri-grid bg-white p-3 rounded-xl border-2 transition-all ${isSelected ? 'border-orange-500/30 bg-orange-50/10' : 'border-slate-50'}`;
                 div.innerHTML = `
-                    <div class="flex justify-center"><input type="checkbox" ${isSelected ? 'checked' : ''} onchange="toggleFoodSelection(${pIdx}, '${item.id}')" class="w-5 h-5 accent-green-700 cursor-pointer"></div>
-                    <div><input type="number" value="${qty}" min="0" oninput="updateFoodQuantity(${pIdx}, '${item.id}', this.value)" class="text-center bg-transparent"></div>
-                    <input type="text" value="${item.label}" oninput="updateFoodItem(${pIdx}, ${fIdx}, 'label', this.value)">
-                    <input type="number" value="${item.weight}" oninput="updateFoodItem(${pIdx}, ${fIdx}, 'weight', this.value)" placeholder="Poids">
-                    <input type="number" value="${item.kcal}" oninput="updateFoodItem(${pIdx}, ${fIdx}, 'kcal', this.value)">
-                    <input type="number" value="${item.prot}" oninput="updateFoodItem(${pIdx}, ${fIdx}, 'prot', this.value)">
-                    <input type="number" value="${item.gluc}" oninput="updateFoodItem(${pIdx}, ${fIdx}, 'gluc', this.value)">
-                    <input type="number" value="${item.lip}" oninput="updateFoodItem(${pIdx}, ${fIdx}, 'lip', this.value)">
-                    <input type="number" value="${item.sod}" oninput="updateFoodItem(${pIdx}, ${fIdx}, 'sod', this.value)">
-                    <input type="number" value="${item.fib}" oninput="updateFoodItem(${pIdx}, ${fIdx}, 'fib', this.value)">
-                    <button onclick="profiles[${pIdx}].food.splice(${fIdx},1); renderFoodLists(); calculate();" class="text-red-400 font-bold hover:text-red-600">×</button>
+                    <div class="flex justify-center">
+                        <input type="checkbox" ${isSelected ? 'checked' : ''} onchange="toggleFoodSelection(${pIdx}, '${item.id}')" 
+                               class="w-6 h-6 rounded-md accent-orange-500 cursor-pointer">
+                    </div>
+                    <div><input type="number" value="${qty}" min="0" oninput="updateFoodQuantity(${pIdx}, '${item.id}', this.value)" class="input-field text-center font-bold px-1"></div>
+                    <div class="relative"><input type="text" value="${item.label}" oninput="updateFoodItem(${pIdx}, ${fIdx}, 'label', this.value)" class="input-field w-full font-medium"></div>
+                    <div><input type="number" value="${item.weight}" oninput="updateFoodItem(${pIdx}, ${fIdx}, 'weight', this.value)" class="input-field w-full text-slate-500"></div>
+                    <div><input type="number" value="${item.kcal}" oninput="updateFoodItem(${pIdx}, ${fIdx}, 'kcal', this.value)" class="input-field w-full text-slate-800 font-bold"></div>
+                    <div><input type="number" value="${item.prot}" oninput="updateFoodItem(${pIdx}, ${fIdx}, 'prot', this.value)" class="input-field w-full text-slate-500"></div>
+                    <div><input type="number" value="${item.gluc}" oninput="updateFoodItem(${pIdx}, ${fIdx}, 'gluc', this.value)" class="input-field w-full text-slate-500"></div>
+                    <div><input type="number" value="${item.lip}" oninput="updateFoodItem(${pIdx}, ${fIdx}, 'lip', this.value)" class="input-field w-full text-slate-500"></div>
+                    <div><input type="number" value="${item.sod}" oninput="updateFoodItem(${pIdx}, ${fIdx}, 'sod', this.value)" class="input-field w-full text-slate-500"></div>
+                    <div><input type="number" value="${item.fib}" oninput="updateFoodItem(${pIdx}, ${fIdx}, 'fib', this.value)" class="input-field w-full text-slate-500"></div>
+                    <button onclick="profiles[${pIdx}].food.splice(${fIdx},1); renderFoodLists(); calculate();" class="text-slate-300 hover:text-red-500 transition-colors p-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
+                    </button>
                 `;
                 list.appendChild(div);
             });
@@ -396,7 +465,7 @@
             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(fullState));
             const downloadAnchorNode = document.createElement('a');
             downloadAnchorNode.setAttribute("href", dataStr);
-            downloadAnchorNode.setAttribute("download", "rando_expert_session.json");
+            downloadAnchorNode.setAttribute("download", "expedition_plan.json");
             document.body.appendChild(downloadAnchorNode);
             downloadAnchorNode.click();
             downloadAnchorNode.remove();
@@ -416,9 +485,7 @@
                         currentDayIdx = 0;
                         switchMainView('p0');
                     }
-                } catch (err) {
-                    console.error("Erreur d'importation : ", err);
-                }
+                } catch (err) { console.error(err); }
             };
             reader.readAsText(file);
         }
@@ -436,8 +503,6 @@
             profiles.forEach((p, i) => {
                 const W = p.weight || 1;
                 const fixedLoad = d.loads[i] || 0;
-                
-                // Analyse de la nourriture pour calculer le poids total des consommables
                 const daySelections = d.selectedFood[i];
                 let selectedItemsList = [];
                 let foodWeightGrams = 0;
@@ -445,28 +510,16 @@
                 const totals = p.food.reduce((acc, cur) => {
                     const qty = daySelections[cur.id] || 0;
                     if (qty > 0) {
-                        acc.kcal += cur.kcal * qty; 
-                        acc.prot += cur.prot * qty; 
-                        acc.gluc += cur.gluc * qty; 
-                        acc.lip += cur.lip * qty; 
-                        acc.sod += cur.sod * qty; 
-                        acc.fib += cur.fib * qty;
-                        // Calcul de la masse transportée
+                        acc.kcal += cur.kcal * qty; acc.prot += cur.prot * qty; acc.gluc += cur.gluc * qty; 
+                        acc.lip += cur.lip * qty; acc.sod += cur.sod * qty; acc.fib += cur.fib * qty;
                         foodWeightGrams += (cur.weight || 0) * qty;
-                        selectedItemsList.push({ 
-                            label: cur.label, 
-                            qty: qty, 
-                            weightTotal: Math.round((cur.weight || 0) * qty),
-                            kcalTotal: Math.round(cur.kcal * qty) 
-                        });
+                        selectedItemsList.push({ label: cur.label, qty: qty, weightTotal: Math.round((cur.weight || 0) * qty), kcalTotal: Math.round(cur.kcal * qty) });
                     }
                     return acc;
                 }, { kcal: 0, prot: 0, gluc: 0, lip: 0, sod: 0, fib: 0 });
 
-                // Charge totale L = Charge fixe + Charge nourriture (en kg)
                 const L = fixedLoad + (foodWeightGrams / 1000);
 
-                // 1. Mifflin-St Jeor
                 let bmrDay = (10 * W) + (6.25 * p.height) - (5 * p.age);
                 bmrDay += (p.gender === "M") ? 5 : -161;
                 
@@ -477,7 +530,6 @@
                 const gradePos = (d.elevPos / distM) * 100;
                 const gradeNeg = (d.elevNeg / distM) * 100;
 
-                // 3. Santee avec charge totale dynamique
                 const loadTerm = 2.0 * (W + L) * Math.pow(L / W, 2);
                 const basePower = 1.5 * W + loadTerm;
                 const uphillPower = 0.35 * V * gradePos;
@@ -491,70 +543,95 @@
                 const intensity = Math.min(100, ((metabolicPowerWatts/W) / (p.level * 1.2)) * 100);
 
                 const resultHTML = `
-                    <div class="card p-5 border-t-4 ${i === 0 ? 'border-green-600' : 'border-blue-500'}">
-                        <div class="flex justify-between items-center mb-4">
-                            <h4 class="font-bold text-lg">${p.name}</h4>
-                            <span class="text-xs font-bold text-gray-400 uppercase">J${currentDayIdx+1} | Charge: ${L.toFixed(1)}kg</span>
+                    <div class="outdoor-card p-8 border-t-[8px] ${i === 0 ? 'border-green-800' : 'border-blue-800'} shadow-xl">
+                        <div class="flex justify-between items-start mb-8">
+                            <div>
+                                <h4 class="font-black text-2xl text-slate-800 leading-none">${p.name}</h4>
+                                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Rapport d'activité</span>
+                            </div>
+                            <div class="bg-slate-100 px-3 py-1 rounded-full text-[10px] font-black text-slate-500 uppercase">
+                                Charge: ${L.toFixed(1)}kg
+                            </div>
                         </div>
-                        <div class="space-y-3">
-                            <div class="grid grid-cols-2 gap-2 text-center mb-4">
-                                <div class="bg-gray-50 rounded p-2">
-                                    <span class="block text-[9px] uppercase font-bold text-gray-500">Dépense (Mifflin)</span>
-                                    <span class="text-lg font-bold">${Math.round(totalNeeded)}</span> <span class="text-xs">kcal</span>
-                                </div>
-                                <div class="bg-gray-50 rounded p-2">
-                                    <span class="block text-[9px] uppercase font-bold text-gray-500">Apports (prévus)</span>
-                                    <span class="text-lg font-bold text-blue-600">${Math.round(totals.kcal)}</span> <span class="text-xs">kcal</span>
-                                </div>
-                            </div>
-                            
-                            <div class="flex justify-between items-center px-3 py-2 border rounded ${balance >= 0 ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}">
-                                <span class="text-sm font-medium">Balance</span>
-                                <span class="font-bold ${balance >= 0 ? 'text-green-700' : 'text-red-600'}">${Math.round(balance)} kcal</span>
-                            </div>
 
-                            <div class="grid grid-cols-3 gap-1 text-[10px] text-center pt-2">
-                                <div class="bg-white border rounded py-1"><strong>P:</strong> ${Math.round(totals.prot)}g</div>
-                                <div class="bg-white border rounded py-1"><strong>G:</strong> ${Math.round(totals.gluc)}g</div>
-                                <div class="bg-white border rounded py-1"><strong>L:</strong> ${Math.round(totals.lip)}g</div>
-                                <div class="bg-white border rounded py-1"><strong>Na:</strong> ${Math.round(totals.sod)}mg</div>
-                                <div class="bg-white border rounded py-1"><strong>Fi:</strong> ${Math.round(totals.fib)}g</div>
-                                <div class="bg-white border rounded py-1"><strong>Masse Alim:</strong> ${foodWeightGrams}g</div>
+                        <div class="grid grid-cols-1 gap-4 mb-8">
+                            <div class="bg-slate-50 rounded-2xl p-5 border border-slate-100">
+                                <span class="block text-[10px] uppercase font-black text-slate-400 mb-1 tracking-wider italic">Dépense Estimée</span>
+                                <div class="flex items-baseline gap-1">
+                                    <span class="text-3xl font-black text-slate-800">${Math.round(totalNeeded)}</span>
+                                    <span class="text-sm font-bold text-slate-400">kcal / jour</span>
+                                </div>
                             </div>
+                            <div class="bg-slate-900 rounded-2xl p-5 shadow-inner">
+                                <span class="block text-[10px] uppercase font-black text-slate-500 mb-1 tracking-wider italic">Apport Prévu</span>
+                                <div class="flex items-baseline gap-1">
+                                    <span class="text-3xl font-black text-orange-400">${Math.round(totals.kcal)}</span>
+                                    <span class="text-sm font-bold text-slate-500">kcal / jour</span>
+                                </div>
+                            </div>
+                        </div>
 
-                            <div class="mt-4">
-                                <div class="flex justify-between text-[10px] mb-1 font-bold">
-                                    <span>INTENSITÉ PHYSIOLOGIQUE</span>
-                                    <span>${Math.round(intensity)}%</span>
-                                </div>
-                                <div class="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
-                                    <div class="h-2 ${intensity > 80 ? 'bg-red-500' : intensity > 60 ? 'bg-orange-400' : 'bg-green-500'}" style="width: ${intensity}%"></div>
-                                </div>
+                        <div class="p-4 rounded-xl mb-8 flex items-center justify-between ${balance >= 0 ? 'bg-green-50 text-green-800 border border-green-100' : 'bg-red-50 text-red-800 border border-red-100'}">
+                            <span class="text-xs font-bold uppercase tracking-widest">Balance énergétique</span>
+                            <span class="text-xl font-black">${balance > 0 ? '+' : ''}${Math.round(balance)}</span>
+                        </div>
+
+                        <div class="space-y-4">
+                            <div class="flex justify-between text-[11px] mb-1 font-black text-slate-600 uppercase">
+                                <span>Fatigue Physiologique</span>
+                                <span class="${intensity > 80 ? 'text-red-600' : 'text-slate-400'}">${Math.round(intensity)}%</span>
+                            </div>
+                            <div class="custom-progress">
+                                <div class="h-full transition-all duration-500 ${intensity > 80 ? 'bg-gradient-to-r from-orange-500 to-red-600' : 'bg-gradient-to-r from-green-400 to-orange-500'}" style="width: ${intensity}%"></div>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-3 gap-2 mt-8">
+                            <div class="text-center p-2 rounded-lg bg-slate-50 border border-slate-100">
+                                <span class="block text-[8px] font-black text-slate-400 uppercase">Protéines</span>
+                                <span class="text-sm font-bold text-slate-700">${Math.round(totals.prot)}g</span>
+                            </div>
+                            <div class="text-center p-2 rounded-lg bg-slate-50 border border-slate-100">
+                                <span class="block text-[8px] font-black text-slate-400 uppercase">Glucides</span>
+                                <span class="text-sm font-bold text-slate-700">${Math.round(totals.gluc)}g</span>
+                            </div>
+                            <div class="text-center p-2 rounded-lg bg-slate-50 border border-slate-100">
+                                <span class="block text-[8px] font-black text-slate-400 uppercase">Lipides</span>
+                                <span class="text-sm font-bold text-slate-700">${Math.round(totals.lip)}g</span>
                             </div>
                         </div>
                     </div>
                 `;
 
                 let foodListHTML = `
-                    <div class="card p-5 border-l-4 ${i === 0 ? 'border-green-600' : 'border-blue-500'}">
-                        <h4 class="font-bold mb-3 border-b pb-1">Menu de ${p.name}</h4>
+                    <div class="outdoor-card p-8 border-l-[8px] ${i === 0 ? 'border-green-800' : 'border-blue-800'} shadow-xl">
+                        <div class="flex items-center gap-3 mb-6">
+                            <div class="p-2 bg-slate-100 rounded-lg">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-600"><path d="M6 13.87A4 4 0 0 1 7.41 6a5.11 5.11 0 0 1 1.05-1.54 5 5 0 0 1 7.08 0A5.11 5.11 0 0 1 16.59 6 4 4 0 0 1 18 13.87V21H6Z"/><line x1="6" x2="18" y1="17" y2="17"/></svg>
+                            </div>
+                            <h4 class="font-black text-lg text-slate-800 uppercase tracking-tighter">Menu de ${p.name}</h4>
+                        </div>
                         ${selectedItemsList.length > 0 ? `
-                            <table class="w-full text-sm">
-                                <thead class="text-left text-[10px] text-gray-500 uppercase">
-                                    <tr><th class="pb-2">Aliment</th><th class="pb-2 text-center">Qté</th><th class="pb-2 text-right">Masse</th><th class="pb-2 text-right">Kcal</th></tr>
-                                </thead>
-                                <tbody>
-                                    ${selectedItemsList.map(item => `
-                                        <tr class="border-t border-gray-50">
-                                            <td class="py-2">${item.label}</td>
-                                            <td class="py-2 text-center">${item.qty}</td>
-                                            <td class="py-2 text-right">${item.weightTotal}g</td>
-                                            <td class="py-2 text-right font-medium">${item.kcalTotal}</td>
-                                        </tr>
-                                    `).join('')}
-                                </tbody>
-                            </table>
-                        ` : '<p class="text-gray-400 italic text-sm text-center py-4">Aucun aliment sélectionné</p>'}
+                            <div class="space-y-1">
+                                <div class="grid grid-cols-4 text-[9px] font-black text-slate-400 uppercase pb-2 px-2">
+                                    <div class="col-span-2">Aliment</div><div class="text-right">Masse</div><div class="text-right">Energie</div>
+                                </div>
+                                ${selectedItemsList.map(item => `
+                                    <div class="grid grid-cols-4 py-3 px-2 border-t border-slate-50 items-center">
+                                        <div class="col-span-2">
+                                            <span class="block font-bold text-slate-700 text-sm truncate pr-2">${item.label}</span>
+                                            <span class="text-[9px] text-slate-400 uppercase">Portion x${item.qty}</span>
+                                        </div>
+                                        <div class="text-right font-medium text-slate-500 text-sm">${item.weightTotal}g</div>
+                                        <div class="text-right font-black text-slate-800 text-sm">${item.kcalTotal} <span class="text-[9px] text-slate-400">kcal</span></div>
+                                    </div>
+                                `).join('')}
+                                <div class="mt-6 p-4 bg-slate-50 rounded-xl flex justify-between items-center border border-slate-100">
+                                    <span class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Masse Totale</span>
+                                    <span class="text-lg font-black text-slate-800">${foodWeightGrams} <span class="text-xs font-bold text-slate-400 uppercase">g</span></span>
+                                </div>
+                            </div>
+                        ` : '<div class="text-center py-10 bg-slate-50 rounded-2xl border border-dashed border-slate-200"><p class="text-slate-400 font-medium text-sm italic">Aucune ration planifiée</p></div>'}
                     </div>
                 `;
 
