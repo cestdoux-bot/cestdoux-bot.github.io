@@ -47,31 +47,14 @@
             padding-bottom: 0.5rem;
             margin-bottom: 0.5rem;
         }
-        /* Masquer l'input file réel pour le styliser */
-        #importFile {
-            display: none;
-        }
     </style>
 </head>
 <body class="p-4 md:p-8">
     <div class="max-w-5xl mx-auto">
-        <header class="mb-8 flex flex-col md:flex-row justify-between items-center bg-white p-6 rounded-xl shadow-sm">
-            <div class="text-left">
-                <h1 class="text-3xl font-bold text-green-900">Planificateur de Randonnée Itinérante</h1>
-                <p class="text-gray-600">Optimisation métabolique et logistique</p>
-            </div>
-            <div class="flex gap-2 mt-4 md:mt-0">
-                <button onclick="exporterSession()" class="flex items-center bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition text-sm">
-                    <span class="mr-2">💾</span> Sauvegarder (JSON)
-                </button>
-                <label for="importFile" class="flex items-center bg-amber-600 text-white px-4 py-2 rounded-lg hover:bg-amber-700 transition text-sm cursor-pointer">
-                    <span class="mr-2">📂</span> Charger une session
-                </label>
-                <input type="file" id="importFile" accept=".json" onchange="importerSession(event)">
-            </div>
+        <header class="mb-8 text-center">
+            <h1 class="text-3xl font-bold text-green-900">Planificateur de Randonnée Itinérante</h1>
+            <p class="text-gray-600">Optimisation métabolique et logistique</p>
         </header>
-
-        <div id="statusMsg" class="hidden mb-4 p-3 rounded-lg text-center font-medium"></div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <!-- Section 1: Paramètres Physiques -->
@@ -191,82 +174,6 @@
             { nom: "Mélange Noix/Fruits", grammes: 50, kcal100: 550, prot100: 12, gluc100: 30 }
         ];
 
-        function afficherMessage(texte, type) {
-            const el = document.getElementById('statusMsg');
-            el.innerText = texte;
-            el.className = `mb-4 p-3 rounded-lg text-center font-medium ${type === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`;
-            el.classList.remove('hidden');
-            setTimeout(() => el.classList.add('hidden'), 4000);
-        }
-
-        // --- Fonctions d'Import / Export ---
-
-        function exporterSession() {
-            const data = {
-                profil: {
-                    poidsCorps: parseFloat(document.getElementById('poidsCorps').value),
-                    poidsSacBase: parseFloat(document.getElementById('poidsSacBase').value)
-                },
-                terrain: {
-                    vitesse: parseFloat(document.getElementById('vitesse').value),
-                    pente: parseFloat(document.getElementById('pente').value),
-                    type: document.getElementById('terrain').value
-                },
-                inventaire: inventaire
-            };
-
-            const json = JSON.stringify(data, null, 2);
-            const blob = new Blob([json], { type: "application/json" });
-            const url = URL.createObjectURL(blob);
-            
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `rando-session-${new Date().toISOString().slice(0,10)}.json`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-            afficherMessage("Session exportée avec succès !", "success");
-        }
-
-        function importerSession(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const data = JSON.parse(e.target.result);
-                    
-                    // Appliquer les données
-                    if (data.profil) {
-                        document.getElementById('poidsCorps').value = data.profil.poidsCorps || 75;
-                        document.getElementById('poidsSacBase').value = data.profil.poidsSacBase || 10;
-                    }
-                    if (data.terrain) {
-                        document.getElementById('vitesse').value = data.terrain.vitesse || 4;
-                        document.getElementById('pente').value = data.terrain.pente || 0;
-                        document.getElementById('terrain').value = data.terrain.type || "1.2";
-                    }
-                    if (data.inventaire) {
-                        inventaire = data.inventaire;
-                    }
-
-                    afficherInventaire();
-                    calculerTout();
-                    afficherMessage("Session chargée avec succès !", "success");
-                } catch (err) {
-                    console.error(err);
-                    afficherMessage("Erreur lors de la lecture du fichier.", "error");
-                }
-            };
-            reader.readAsText(file);
-            // Reset de l'input pour permettre de re-charger le même fichier si besoin
-            event.target.value = '';
-        }
-
-        // --- Logique Métier ---
-
         function ajouterLigneAliment() {
             inventaire.push({ nom: "", grammes: 0, kcal100: 0, prot100: 0, gluc100: 0 });
             afficherInventaire();
@@ -304,6 +211,7 @@
         }
 
         function calculerTout() {
+            // 1. Calcul des totaux nutritionnels
             let totalG = 0;
             let totalKcal = 0;
             let totalProt = 0;
@@ -322,25 +230,33 @@
             document.getElementById('totalProteines').innerText = `${Math.round(totalProt)} g`;
             document.getElementById('totalGlucides').innerText = `${Math.round(totalGluc)} g`;
 
+            // 2. Calcul du poids total du sac
             const poidsBaseSac = parseFloat(document.getElementById('poidsSacBase').value) || 0;
             const poidsNourritureKg = totalG / 1000;
             const poidsTotalSac = poidsBaseSac + poidsNourritureKg;
             document.getElementById('poidsTotalSac').innerText = poidsTotalSac.toFixed(2);
 
+            // 3. Calcul métabolique (Pandolf)
             const W = parseFloat(document.getElementById('poidsCorps').value) || 75;
             const L = poidsTotalSac;
-            const V = (parseFloat(document.getElementById('vitesse').value) || 4) / 3.6;
+            const V = (parseFloat(document.getElementById('vitesse').value) || 4) / 3.6; // conversion en m/s
             const G = parseFloat(document.getElementById('pente').value) || 0;
             const eta = parseFloat(document.getElementById('terrain').value) || 1.2;
 
+            // Formule de Pandolf : M = 1.5W + 2.0(W+L)(L/W)^2 + eta(W+L)[1.5V^2 + 0.35VG]
+            // Note: C'est une simplification pour l'UI, Santee traite les pentes négatives.
             let M = 1.5 * W + 2.0 * (W + L) * Math.pow(L / W, 2) + eta * (W + L) * (1.5 * Math.pow(V, 2) + 0.35 * V * G);
+            
+            // Conversion Watts en kcal/h (1 Watt = 0.860 kcal/h)
             const kcalH = M * 0.860;
             document.getElementById('depenseHoraire').innerText = Math.round(kcalH);
 
+            // Ratio énergie
             const ratio = totalG > 0 ? (totalKcal / (totalG / 100)) : 0;
             document.getElementById('ratioEnergie').innerText = Math.round(ratio);
         }
 
+        // Initialisation
         window.onload = () => {
             afficherInventaire();
             calculerTout();
