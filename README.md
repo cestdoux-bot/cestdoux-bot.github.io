@@ -17,6 +17,13 @@
             font-family: 'Inter', sans-serif;
             color: #334155;
         }
+        
+        /* CORRECTIF GITHUB PAGES : Forcer la largeur maximale */
+        #main_content, .container-lg, .container { 
+            max-width: none !important; 
+            padding: 0 !important; 
+        }
+
         .outdoor-card {
             background: white;
             border: 1px solid rgba(226, 232, 240, 0.8);
@@ -69,8 +76,7 @@
 </head>
 <body class="antialiased">
 
-    <div class="max-w-7xl mx-auto px-4 py-6 md:py-10">
-        <!-- HEADER -->
+    <div class="max-w-[1600px] mx-auto px-4 py-6 md:py-10">
         <header class="mb-10 flex flex-col md:flex-row justify-between items-center bg-[#1a2e1a] p-8 rounded-[2rem] shadow-xl text-white">
             <div class="text-left mb-6 md:mb-0">
                 <div class="flex items-center gap-3 mb-1">
@@ -99,7 +105,6 @@
             </div>
         </header>
 
-        <!-- NAVIGATION SEGMENTÉE -->
         <nav class="flex justify-center mb-10">
             <div class="bg-white p-1.5 rounded-2xl shadow-sm inline-flex gap-1 border border-slate-200">
                 <button onclick="switchMainView('p0')" id="nav-p0" class="px-8 py-2.5 rounded-xl font-bold transition-all text-sm">Cédrik</button>
@@ -112,13 +117,10 @@
             </div>
         </nav>
 
-        <!-- VUE INDIVIDUELLE -->
         <div id="individual-view" class="space-y-8">
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 
-                <!-- COLONNE GAUCHE : PARAMÈTRES (2/3) -->
                 <div class="lg:col-span-2 space-y-8">
-                    <!-- PHYSIQUE -->
                     <section class="outdoor-card p-8">
                         <div class="flex items-center gap-2 mb-6">
                             <h2 class="text-lg font-bold text-slate-800 uppercase tracking-tight">Paramètres du randonneur</h2>
@@ -155,7 +157,6 @@
                         </div>
                     </section>
 
-                    <!-- ÉTAPE -->
                     <section class="outdoor-card p-8">
                         <div id="day-tabs" class="flex overflow-x-auto gap-6 mb-8 border-b border-slate-100"></div>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
@@ -206,15 +207,12 @@
                     </section>
                 </div>
 
-                <!-- COLONNE DROITE : RÉSULTATS STICKY (1/3) -->
                 <div class="lg:col-span-1">
                     <div class="sticky-results" id="local-performance-view">
-                        <!-- Rempli par le JS -->
-                    </div>
+                        </div>
                 </div>
             </div>
 
-            <!-- GARDE-MANGER -->
             <section class="outdoor-card p-8 border-l-[6px] border-[#1a2e1a]">
                 <div class="flex justify-between items-end mb-8">
                     <div>
@@ -237,7 +235,6 @@
             </section>
         </div>
 
-        <!-- VUE SYNTHÈSE -->
         <div id="summary-view" class="hidden space-y-10">
             <div id="summary-day-tabs" class="flex overflow-x-auto gap-4 mb-8 border-b border-slate-200"></div>
             
