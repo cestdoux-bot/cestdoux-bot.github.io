@@ -18,7 +18,6 @@
             color: #334155;
         }
         
-        /* CORRECTIF GITHUB PAGES : Forcer la largeur maximale */
         #main_content, .container-lg, .container { 
             max-width: none !important; 
             padding: 0 !important; 
@@ -47,10 +46,6 @@
         .tab-active {
             color: var(--adventure);
             border-bottom: 2px solid var(--adventure);
-        }
-        .nav-tab-active {
-            background-color: var(--forest) !important;
-            color: white !important;
         }
         .nutri-grid {
             display: grid;
@@ -119,7 +114,6 @@
 
         <div id="individual-view" class="space-y-8">
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                
                 <div class="lg:col-span-2 space-y-8">
                     <section class="outdoor-card p-8">
                         <div class="flex items-center gap-2 mb-6">
@@ -195,21 +189,19 @@
                             <div class="bg-slate-50 rounded-2xl p-6 border border-slate-100 flex flex-col justify-center">
                                 <h3 class="text-sm font-extrabold text-[#1a2e1a] uppercase tracking-widest mb-4">Logistique & Charge</h3>
                                 <div class="space-y-4">
-                                    <label class="block text-sm font-medium text-slate-600" id="label-load-current">Poids du sac de base (kg)</label>
+                                    <label class="block text-sm font-medium text-slate-600" id="label-load-current">Poids du sac fixe (kg)</label>
                                     <input type="number" id="d-load-current" oninput="saveCurrentDay(); calculate()" class="input-field w-full bg-white shadow-inner text-lg font-bold">
                                     <div class="flex items-start gap-2 text-blue-600 bg-blue-50 p-3 rounded-lg border border-blue-100">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mt-0.5"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="16" y2="12"/><line x1="12" x2="12" y1="8" y2="8"/></svg>
-                                        <p class="text-[11px] leading-snug">Le poids de la nourriture sélectionnée est ajouté dynamiquement au calcul.</p>
+                                        <p class="text-[11px] leading-snug">La charge "L" est dégressive : elle inclut le poids total de la nourriture restante pour le séjour.</p>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </section>
                 </div>
-
                 <div class="lg:col-span-1">
-                    <div class="sticky-results" id="local-performance-view">
-                        </div>
+                    <div class="sticky-results" id="local-performance-view"></div>
                 </div>
             </div>
 
@@ -223,7 +215,6 @@
                         + Ajouter un aliment
                     </button>
                 </div>
-                
                 <div class="overflow-x-auto">
                     <div class="min-w-[800px]">
                         <div class="nutri-grid text-[10px] font-black text-slate-400 uppercase mb-4 px-4">
@@ -237,20 +228,16 @@
 
         <div id="summary-view" class="hidden space-y-10">
             <div id="summary-day-tabs" class="flex overflow-x-auto gap-4 mb-8 border-b border-slate-200"></div>
-            
             <div class="flex items-center gap-4 mb-2">
                 <h3 class="text-2xl font-black text-slate-800">ANALYSE DE MISSION</h3>
                 <div class="h-px flex-1 bg-slate-200"></div>
             </div>
-            
             <div id="results-summary" class="grid grid-cols-1 md:grid-cols-2 gap-8"></div>
-
             <div class="flex items-center gap-4 mb-2 mt-12">
                 <h3 class="text-2xl font-black text-slate-800">PLAN DE CHARGE NUTRITIONNEL</h3>
                 <div class="h-px flex-1 bg-slate-200"></div>
             </div>
             <div id="food-summary-grid" class="grid grid-cols-1 md:grid-cols-2 gap-8"></div>
-
             <div class="flex items-center gap-4 mb-2 mt-12">
                 <h3 class="text-2xl font-black text-slate-800 uppercase tracking-tight">Liste d'épicerie globale</h3>
                 <div class="h-px flex-1 bg-slate-200"></div>
@@ -505,18 +492,28 @@
             if (localPerformanceDiv) localPerformanceDiv.innerHTML = '';
             if (grocerySummaryGrid) grocerySummaryGrid.innerHTML = '';
 
+            // 1. CALCUL DU POIDS TOTAL DE NOURRITURE PAR PROFIL (SUR TOUT LE TREK)
+            let totalFoodWeightByProfile = profiles.map((p, pIdx) => {
+                let totalGrams = 0;
+                days.forEach(day => {
+                    const selections = day.selectedFood[pIdx];
+                    for (const fId in selections) {
+                        const foodItem = p.food.find(f => f.id === fId);
+                        if (foodItem) totalGrams += (foodItem.weight * selections[fId]);
+                    }
+                });
+                return totalGrams;
+            });
+
             // Consolidation de l'épicerie pour toute la durée
             let profileGroceries = profiles.map(() => ({}));
-
             days.forEach((day) => {
                 profiles.forEach((p, pIdx) => {
                     const daySelections = day.selectedFood[pIdx];
                     for (const foodId in daySelections) {
                         const qty = daySelections[foodId];
                         if (qty > 0) {
-                            if (!profileGroceries[pIdx][foodId]) {
-                                profileGroceries[pIdx][foodId] = 0;
-                            }
+                            if (!profileGroceries[pIdx][foodId]) profileGroceries[pIdx][foodId] = 0;
                             profileGroceries[pIdx][foodId] += qty;
                         }
                     }
@@ -525,24 +522,39 @@
 
             profiles.forEach((p, i) => {
                 const W = p.weight || 1;
-                const fixedLoad = d.loads[i] || 0;
+                const baseSacPoids = d.loads[i] || 0;
+                
+                // 2. CALCUL DE LA NOURRITURE RESTANTE POUR LE JOUR COURANT (DÉGRESSIF)
+                let consumedWeightUntilToday = 0;
+                for (let dayStep = 0; dayStep < currentDayIdx; dayStep++) {
+                    const selections = days[dayStep].selectedFood[i];
+                    for (const fId in selections) {
+                        const foodItem = p.food.find(f => f.id === fId);
+                        if (foodItem) consumedWeightUntilToday += (foodItem.weight * selections[fId]);
+                    }
+                }
+                
+                const foodWeightRemainingKg = (totalFoodWeightByProfile[i] - consumedWeightUntilToday) / 1000;
+                
+                // LA CHARGE L EST MAINTENANT LE POIDS DU SAC FIXE + TOUTE LA NOURRITURE RESTANTE
+                const L = baseSacPoids + foodWeightRemainingKg;
+
+                // Calculs nutritionnels du jour courant pour affichage
                 const daySelections = d.selectedFood[i];
                 let selectedItemsList = [];
-                let foodWeightGrams = 0;
-                
+                let currentDayFoodWeightGrams = 0;
                 const totals = p.food.reduce((acc, cur) => {
                     const qty = daySelections[cur.id] || 0;
                     if (qty > 0) {
                         acc.kcal += cur.kcal * qty; acc.prot += cur.prot * qty; acc.gluc += cur.gluc * qty; 
                         acc.lip += cur.lip * qty; acc.sod += cur.sod * qty; acc.fib += cur.fib * qty;
-                        foodWeightGrams += (cur.weight || 0) * qty;
+                        currentDayFoodWeightGrams += (cur.weight || 0) * qty;
                         selectedItemsList.push({ label: cur.label, qty: qty, weightTotal: Math.round((cur.weight || 0) * qty), kcalTotal: Math.round(cur.kcal * qty) });
                     }
                     return acc;
                 }, { kcal: 0, prot: 0, gluc: 0, lip: 0, sod: 0, fib: 0 });
 
-                const L = fixedLoad + (foodWeightGrams / 1000);
-
+                // Formule de Pandolf
                 let bmrDay = (10 * W) + (6.25 * p.height) - (5 * p.age);
                 bmrDay += (p.gender === "M") ? 5 : -161;
                 
@@ -572,14 +584,14 @@
                                 <h4 class="font-black text-2xl text-slate-800 leading-none">${p.name}</h4>
                                 <span class="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Rapport d'activité</span>
                             </div>
-                            <div class="bg-slate-100 px-3 py-1 rounded-full text-[10px] font-black text-slate-500 uppercase">
-                                Charge: ${L.toFixed(1)}kg
+                            <div class="bg-orange-100 px-3 py-1 rounded-full text-[10px] font-black text-orange-700 uppercase">
+                                Charge dégressive (L): ${L.toFixed(2)}kg
                             </div>
                         </div>
 
                         <div class="grid grid-cols-1 gap-4 mb-8">
                             <div class="bg-slate-50 rounded-2xl p-5 border border-slate-100">
-                                <span class="block text-[10px] uppercase font-black text-slate-400 mb-1 tracking-wider italic">Dépense Estimée</span>
+                                <span class="block text-[10px] uppercase font-black text-slate-400 mb-1 tracking-wider italic">Dépense Estimée (Étape ${currentDayIdx + 1})</span>
                                 <div class="flex items-baseline gap-1">
                                     <span class="text-3xl font-black text-slate-800">${Math.round(totalNeeded)}</span>
                                     <span class="text-sm font-bold text-slate-400">kcal / jour</span>
@@ -632,7 +644,7 @@
                             <div class="p-2 bg-slate-100 rounded-lg">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-600"><path d="M6 13.87A4 4 0 0 1 7.41 6a5.11 5.11 0 0 1 1.05-1.54 5 5 0 0 1 7.08 0A5.11 5.11 0 0 1 16.59 6 4 4 0 0 1 18 13.87V21H6Z"/><line x1="6" x2="18" y1="17" y2="17"/></svg>
                             </div>
-                            <h4 class="font-black text-lg text-slate-800 uppercase tracking-tighter">Menu de ${p.name}</h4>
+                            <h4 class="font-black text-lg text-slate-800 uppercase tracking-tighter">Menu Étape ${currentDayIdx+1} - ${p.name}</h4>
                         </div>
                         ${selectedItemsList.length > 0 ? `
                             <div class="space-y-1">
@@ -650,19 +662,17 @@
                                     </div>
                                 `).join('')}
                                 <div class="mt-6 p-4 bg-slate-50 rounded-xl flex justify-between items-center border border-slate-100">
-                                    <span class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Masse Totale</span>
-                                    <span class="text-lg font-black text-slate-800">${foodWeightGrams} <span class="text-xs font-bold text-slate-400 uppercase">g</span></span>
+                                    <span class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Masse consommée ce jour</span>
+                                    <span class="text-lg font-black text-slate-800">${currentDayFoodWeightGrams} <span class="text-xs font-bold text-slate-400 uppercase">g</span></span>
                                 </div>
                             </div>
                         ` : '<div class="text-center py-10 bg-slate-50 rounded-2xl border border-dashed border-slate-200"><p class="text-slate-400 font-medium text-sm italic">Aucune ration planifiée</p></div>'}
                     </div>
                 `;
 
-                // Rendu de la liste d'épicerie consolidée
                 const groceryItems = profileGroceries[i];
                 const hasGrocery = Object.keys(groceryItems).length > 0;
                 let totalGroceryWeight = 0;
-
                 let groceryListHTML = `
                     <div class="outdoor-card p-8 border-t-[8px] ${i === 0 ? 'border-green-800' : 'border-blue-800'} shadow-xl">
                         <div class="flex items-center justify-between mb-6">
@@ -692,7 +702,7 @@
                                     `;
                                 }).join('')}
                                 <div class="mt-6 p-4 bg-[#1a2e1a] rounded-xl flex justify-between items-center text-white">
-                                    <span class="text-[10px] font-black uppercase tracking-wider opacity-60">Poids Total à acheter</span>
+                                    <span class="text-[10px] font-black uppercase tracking-wider opacity-60">Poids Total Nourriture (Départ)</span>
                                     <span class="text-lg font-black">${totalGroceryWeight >= 1000 ? (totalGroceryWeight/1000).toFixed(2) + ' kg' : totalGroceryWeight + ' g'}</span>
                                 </div>
                             ` : '<p class="text-center text-slate-400 italic py-4">Aucun aliment sélectionné sur le trek.</p>'}
