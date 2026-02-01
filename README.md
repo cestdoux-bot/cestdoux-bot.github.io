@@ -55,12 +55,27 @@
 <body class="p-4 md:p-8">
 
     <div class="max-w-6xl mx-auto">
-        <header class="mb-6 text-center">
-            <h1 class="text-3xl font-bold text-green-900">Calculateur de Randonnée Expert</h1>
-            <div class="mt-4 flex items-center justify-center gap-4">
-                <label class="text-gray-700 font-medium">Durée du trek :</label>
-                <input type="number" id="total-days" onchange="updateDayCount()" value="5" min="1" max="14" class="w-20 text-center">
-                <span class="text-gray-500 text-sm">jours</span>
+        <header class="mb-6 flex flex-col md:flex-row justify-between items-center bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+            <div class="text-left">
+                <h1 class="text-2xl font-bold text-green-900 leading-tight">Calculateur de Randonnée Expert</h1>
+                <div class="mt-2 flex items-center gap-3">
+                    <label class="text-gray-600 text-sm font-medium">Durée du trek :</label>
+                    <input type="number" id="total-days" onchange="updateDayCount()" value="5" min="1" max="14" class="w-16 text-center h-8">
+                    <span class="text-gray-400 text-xs">jours</span>
+                </div>
+            </div>
+
+            <!-- BOUTONS DE SAUVEGARDE / IMPORT -->
+            <div class="flex gap-2 mt-4 md:mt-0">
+                <button onclick="exportData()" class="flex items-center gap-2 px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-all text-xs font-bold uppercase tracking-wider">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+                    Exporter JSON
+                </button>
+                <button onclick="document.getElementById('importFile').click()" class="flex items-center gap-2 px-3 py-2 bg-green-800 hover:bg-green-900 text-white rounded-lg transition-all text-xs font-bold uppercase tracking-wider">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
+                    Importer JSON
+                </button>
+                <input type="file" id="importFile" accept=".json" class="hidden" onchange="importData(event)">
             </div>
         </header>
 
@@ -193,7 +208,7 @@
         let currentDayIdx = 0;
         let activeMainView = 'p0';
 
-        const profiles = [
+        let profiles = [
             { 
                 name: "Cédrik", gender: "M", age: 30, height: 180, weight: 75, level: 7, 
                 food: [{id: 'f1', label: "Lyophilisé Poulet", kcal: 650, prot: 35, gluc: 80, lip: 15, sod: 1200, fib: 8}] 
@@ -371,6 +386,48 @@
             });
         }
 
+        // --- GESTION DE LA SAUVEGARDE ---
+        function exportData() {
+            saveCurrentDay();
+            const fullState = {
+                profiles: profiles,
+                days: days,
+                totalDays: document.getElementById('total-days').value,
+                timestamp: new Date().toISOString()
+            };
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(fullState));
+            const downloadAnchorNode = document.createElement('a');
+            downloadAnchorNode.setAttribute("href", dataStr);
+            downloadAnchorNode.setAttribute("download", "rando_expert_session.json");
+            document.body.appendChild(downloadAnchorNode);
+            downloadAnchorNode.click();
+            downloadAnchorNode.remove();
+        }
+
+        function importData(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const imported = JSON.parse(e.target.result);
+                    if (imported.profiles && imported.days) {
+                        profiles = imported.profiles;
+                        days = imported.days;
+                        document.getElementById('total-days').value = imported.totalDays;
+                        currentDayIdx = 0;
+                        switchMainView('p0');
+                    }
+                } catch (err) {
+                    console.error("Erreur d'importation : ", err);
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        /**
+         * CALCULS MÉTABOLIQUES AVANCÉS
+         */
         function calculate() {
             const d = days[currentDayIdx];
             const resultsSummaryDiv = document.getElementById('results-summary');
@@ -382,42 +439,45 @@
             if (localPerformanceDiv) localPerformanceDiv.innerHTML = '';
 
             profiles.forEach((p, i) => {
-                const load = d.loads[i];
-                const W = p.weight;
-                const L = load;
+                const W = p.weight || 1;
+                const L = d.loads[i] || 0;
                 
-                // BMR (Harris-Benedict)
-                let bmrDay = (p.gender === "M") 
-                    ? 88.362 + (13.397 * W) + (4.799 * p.height) - (5.677 * p.age)
-                    : 447.593 + (9.247 * W) + (3.098 * p.height) - (4.330 * p.age);
+                // 1. Formule de Mifflin-St Jeor pour le BMR (plus précis que Harris-Benedict)
+                let bmrDay = (10 * W) + (6.25 * p.height) - (5 * p.age);
+                bmrDay += (p.gender === "M") ? 5 : -161;
                 
+                // Données de l'étape
                 const timeSec = (d.time || 1) * 3600;
                 const distM = (d.dist || 0.001) * 1000;
-                const V = distM / timeSec; 
+                const V = distM / timeSec; // Vitesse en m/s
                 
-                // Formule de Santee (2003) pour ajustement dénivelé
-                // Metabolic Power = 1.5W + 2.0(W+L)(L/W)^2 + n(W+L)[1.5V^2 + 0.35VG]
-                // Ajustement Santee pour la pente G
-                // Montée: G est positif. Descente: G est négatif.
-                // En descente raide (G < -10%), la puissance réaugmente dû au freinage excentrique.
-                
-                const netElev = d.elevPos - d.elevNeg;
-                const grade = (netElev / distM) * 100;
-                
-                let santeeGradeFactor = 0.35 * V * grade;
-                
-                // Correction Santee pour descente (freinage excentrique)
-                // Si la pente est très négative, on rajoute un coût de stabilisation
-                if (grade < -10) {
-                    santeeGradeFactor = 0.35 * V * Math.abs(grade) * 0.3; // Environ 30% du coût de montée pour le freinage
-                }
+                // 2. Calcul des pentes séparées (Positives et Négatives)
+                const gradePos = (d.elevPos / distM) * 100;
+                const gradeNeg = (d.elevNeg / distM) * 100;
 
-                const loadTerm = 2.0 * (W + L) * Math.pow(L / (W || 1), 2);
-                let metabolicPowerWatts = 1.5 * W + loadTerm + d.terrain * (W + L) * (1.5 * Math.pow(V, 2) + santeeGradeFactor);
+                // 3. Équation de Santee découplée (Poids total W+L pour l'effort de charge)
+                const loadTerm = 2.0 * (W + L) * Math.pow(L / W, 2);
                 
+                // Effort de base sur plat + impact du terrain
+                const basePower = 1.5 * W + loadTerm;
+                
+                // Effort de montée (travail contre la gravité)
+                const uphillPower = 0.35 * V * gradePos;
+                
+                // Effort de descente (travail excentrique / freinage)
+                const downhillPower = V * (gradeNeg / 3) * 0.3;
+
+                // Puissance métabolique totale (Watts)
+                // Formule de Santee : Base + Terrain * (Vitesse^2 + Pentes)
+                let metabolicPowerWatts = basePower + d.terrain * (W + L) * (1.5 * Math.pow(V, 2) + uphillPower + downhillPower);
+                
+                // Conversion Watts -> Kcal/h
                 const kcalPerHourMovement = metabolicPowerWatts * 0.860;
+                
+                // Total journalier : BMR prorata temps repos + Effort prorata temps marche
                 const totalNeeded = ((bmrDay / 24) * Math.max(0, 24 - d.time)) + (kcalPerHourMovement * d.time);
 
+                // Analyse de la nourriture
                 const daySelections = d.selectedFood[i];
                 let selectedItemsList = [];
                 const totals = p.food.reduce((acc, cur) => {
@@ -431,7 +491,6 @@
                 }, { kcal: 0, prot: 0, gluc: 0, lip: 0, sod: 0, fib: 0 });
 
                 const balance = totals.kcal - totalNeeded;
-                // Intensité basée sur le rapport Watts/kg ajusté au niveau
                 const intensity = Math.min(100, ((metabolicPowerWatts/W) / (p.level * 1.2)) * 100);
 
                 const resultHTML = `
@@ -443,7 +502,7 @@
                         <div class="space-y-3">
                             <div class="grid grid-cols-2 gap-2 text-center mb-4">
                                 <div class="bg-gray-50 rounded p-2">
-                                    <span class="block text-[9px] uppercase font-bold text-gray-500">Dépense (estimée)</span>
+                                    <span class="block text-[9px] uppercase font-bold text-gray-500">Dépense (Mifflin)</span>
                                     <span class="text-lg font-bold">${Math.round(totalNeeded)}</span> <span class="text-xs">kcal</span>
                                 </div>
                                 <div class="bg-gray-50 rounded p-2">
@@ -463,12 +522,12 @@
                                 <div class="bg-white border rounded py-1"><strong>L:</strong> ${Math.round(totals.lip)}g</div>
                                 <div class="bg-white border rounded py-1"><strong>Na:</strong> ${Math.round(totals.sod)}mg</div>
                                 <div class="bg-white border rounded py-1"><strong>Fi:</strong> ${Math.round(totals.fib)}g</div>
-                                <div class="bg-white border rounded py-1"><strong>Sac:</strong> ${load}kg</div>
+                                <div class="bg-white border rounded py-1"><strong>Sac:</strong> ${L}kg</div>
                             </div>
 
                             <div class="mt-4">
                                 <div class="flex justify-between text-[10px] mb-1 font-bold">
-                                    <span>FATIGUE PHYSIOLOGIQUE</span>
+                                    <span>INTENSITÉ PHYSIOLOGIQUE</span>
                                     <span>${Math.round(intensity)}%</span>
                                 </div>
                                 <div class="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
@@ -479,7 +538,6 @@
                     </div>
                 `;
 
-                // Construction de la liste des aliments pour la synthèse
                 let foodListHTML = `
                     <div class="card p-5 border-l-4 ${i === 0 ? 'border-green-600' : 'border-blue-500'}">
                         <h4 class="font-bold mb-3 border-b pb-1">Menu de ${p.name}</h4>
