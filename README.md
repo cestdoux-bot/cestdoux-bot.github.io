@@ -44,7 +44,6 @@
             box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.1);
         }
 
-        /* Style spécifique pour le slider Terrain */
         .terrain-slider {
             -webkit-appearance: none;
             width: 100%;
@@ -75,8 +74,14 @@
             gap: 0.5rem;
             align-items: center;
         }
+        .equip-grid {
+            display: grid;
+            grid-template-columns: 2.5rem 3.5rem 3fr 1fr auto;
+            gap: 0.5rem;
+            align-items: center;
+        }
         @media (max-width: 1280px) {
-            .nutri-grid { font-size: 0.75rem; }
+            .nutri-grid, .equip-grid { font-size: 0.75rem; }
         }
         @media (max-width: 1024px) {
             .nutri-grid { 
@@ -221,14 +226,33 @@
                                     <p id="terrain-desc" class="text-[10px] font-medium text-slate-400 italic leading-tight">Sentier battu / Prairies</p>
                                 </div>
                             </div>
-                            <div class="bg-slate-50 rounded-2xl p-6 border border-slate-100 flex flex-col justify-center">
+                            <div class="bg-slate-50 rounded-2xl p-6 border border-slate-100 flex flex-col justify-start">
                                 <h3 class="text-sm font-extrabold text-[#1a2e1a] uppercase tracking-widest mb-4">Logistique & Charge</h3>
                                 <div class="space-y-4">
-                                    <label class="block text-sm font-medium text-slate-600" id="label-load-current">Poids du sac fixe (kg)</label>
-                                    <input type="number" id="d-load-current" oninput="saveCurrentDay(); calculate()" class="input-field w-full bg-white shadow-inner text-lg font-bold">
+                                    <div class="space-y-2">
+                                        <label class="block text-[11px] font-bold text-slate-400 uppercase ml-1">Mode de calcul du sac</label>
+                                        <div class="grid grid-cols-2 gap-2 bg-white p-1 rounded-xl border border-slate-200">
+                                            <button id="mode-manual" onclick="setLoadMode('manual')" class="py-2 text-[10px] font-black uppercase rounded-lg transition-all">Manuel</button>
+                                            <button id="mode-auto" onclick="setLoadMode('auto')" class="py-2 text-[10px] font-black uppercase rounded-lg transition-all">Automatique</button>
+                                        </div>
+                                    </div>
+
+                                    <div id="manual-load-box" class="space-y-1">
+                                        <label class="block text-sm font-medium text-slate-600" id="label-load-current">Poids fixe hors nourriture (kg)</label>
+                                        <input type="number" id="d-load-current" oninput="saveCurrentDay(); calculate()" class="input-field w-full bg-white shadow-inner text-lg font-bold">
+                                    </div>
+
+                                    <div id="auto-load-box" class="hidden space-y-1 p-3 bg-white rounded-xl border-2 border-orange-500/20">
+                                        <span class="block text-[10px] font-bold text-slate-400 uppercase">Poids inventaire matériel</span>
+                                        <div class="flex justify-between items-center">
+                                            <span id="auto-load-val" class="text-xl font-black text-orange-600">0.00 kg</span>
+                                            <span class="text-[9px] text-slate-400 italic">Basé sur les items cochés</span>
+                                        </div>
+                                    </div>
+                                    
                                     <div class="flex items-start gap-2 text-blue-600 bg-blue-50 p-3 rounded-lg border border-blue-100">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mt-0.5"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="16" y2="12"/><line x1="12" x2="12" y1="8" y2="8"/></svg>
-                                        <p class="text-[11px] leading-snug">La charge "L" est dégressive : elle inclut le poids total de la nourriture restante pour le séjour.</p>
+                                        <p class="text-[11px] leading-snug">La charge totale inclut cet équipement + le poids dégressif de la nourriture restante.</p>
                                     </div>
                                 </div>
                             </div>
@@ -269,6 +293,30 @@
                     </div>
                 </div>
             </section>
+
+            <section class="outdoor-card p-8 border-l-[6px] border-orange-500">
+                <div class="flex justify-between items-end mb-8">
+                    <div>
+                        <h3 class="text-xl font-black text-slate-800 uppercase tracking-tight">Inventaire du sac</h3>
+                        <p class="text-slate-400 text-sm">Gérez votre équipement de base (tente, couchage, vêtements).</p>
+                    </div>
+                    <button onclick="addEquipItem(currentProfileIdx)" class="bg-orange-500 text-white px-6 py-3 rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-orange-600 transition-all shadow-lg">
+                        + Ajouter un équipement
+                    </button>
+                </div>
+                <div class="overflow-x-auto">
+                    <div class="min-w-[700px]">
+                        <div class="equip-grid text-[10px] font-black text-slate-400 uppercase mb-4 px-4">
+                            <div class="text-center">Choix</div>
+                            <div class="text-center">Qté</div>
+                            <div>Objet</div>
+                            <div>Poids (g)</div>
+                            <div></div>
+                        </div>
+                        <div id="equip-list-current" class="space-y-3"></div>
+                    </div>
+                </div>
+            </section>
         </div>
 
         <div id="summary-view" class="hidden space-y-10">
@@ -287,7 +335,13 @@
                 <h3 class="text-2xl font-black text-slate-800 uppercase tracking-tight">Liste d'épicerie globale</h3>
                 <div class="h-px flex-1 bg-slate-200"></div>
             </div>
-            <div id="grocery-summary-grid" class="grid grid-cols-1 md:grid-cols-2 gap-8 pb-20"></div>
+            <div id="grocery-summary-grid" class="grid grid-cols-1 md:grid-cols-2 gap-8"></div>
+            
+            <div class="flex items-center gap-4 mb-2 mt-12">
+                <h3 class="text-2xl font-black text-slate-800 uppercase tracking-tight">Inventaire global du matériel</h3>
+                <div class="h-px flex-1 bg-slate-200"></div>
+            </div>
+            <div id="equipment-summary-grid" class="grid grid-cols-1 md:grid-cols-2 gap-8 pb-20"></div>
         </div>
     </div>
 
@@ -298,46 +352,42 @@
 
         let profiles = [
             { 
-                name: "Cédrik", gender: "M", age: 30, height: 180, weight: 75, level: 7, 
-                food: [{id: 'f1', label: "Lyophilisé Poulet", weight: 150, kcal: 650, prot: 35, gluc: 80, lip: 15, sod: 1200, fib: 8}] 
+                name: "Cédrik", gender: "M", age: 30, height: 180, weight: 75, level: 7, loadMode: 'manual',
+                food: [{id: 'f1', label: "Lyophilisé Poulet", weight: 150, kcal: 650, prot: 35, gluc: 80, lip: 15, sod: 1200, fib: 8}],
+                equipment: [{id: 'e1', label: "Sac à dos 60L", qty: 1, weight: 1800, selected: true}]
             },
             { 
-                name: "P-A", gender: "M", age: 32, height: 175, weight: 70, level: 6, 
-                food: [{id: 'f2', label: "Pâtes au Pesto", weight: 180, kcal: 580, prot: 18, gluc: 75, lip: 22, sod: 950, fib: 5}] 
+                name: "P-A", gender: "M", age: 32, height: 175, weight: 70, level: 6, loadMode: 'manual',
+                food: [{id: 'f2', label: "Pâtes au Pesto", weight: 180, kcal: 580, prot: 18, gluc: 75, lip: 22, sod: 950, fib: 5}],
+                equipment: [{id: 'e2', label: "Tente 2P", qty: 1, weight: 2200, selected: true}]
             }
         ];
 
         let days = [];
 
-        // --- NOUVEAU : Sauvegarde Automatique ---
         function saveToLocalStorage() {
             const dataToSave = {
                 profiles: profiles,
                 days: days,
                 totalDays: document.getElementById('total-days').value
             };
-            localStorage.setItem('rando_expert_session', JSON.stringify(dataToSave));
+            localStorage.setItem('rando_expert_session_v2', JSON.stringify(dataToSave));
         }
 
         function init() {
-            // Tentative de chargement depuis le localStorage
-            const savedData = localStorage.getItem('rando_expert_session');
+            const savedData = localStorage.getItem('rando_expert_session_v2');
             if (savedData) {
                 try {
                     const parsed = JSON.parse(savedData);
                     if (parsed.profiles) profiles = parsed.profiles;
                     if (parsed.days) days = parsed.days;
                     if (parsed.totalDays) document.getElementById('total-days').value = parsed.totalDays;
-                } catch (e) {
-                    console.error("Erreur lors du chargement de la session :", e);
-                }
+                } catch (e) { console.error(e); }
             }
-
             updateDayCount();
             switchMainView('p0');
         }
 
-        // --- Logique du Statut Terrain ---
         function getTerrainLabel(val) {
             const v = parseFloat(val);
             if (v <= 1.0) return "Route goudronnée / Billard";
@@ -377,8 +427,27 @@
                 renderDayTabs('day-tabs');
                 loadDayData();
                 renderFoodLists();
+                renderEquipLists();
                 calculate();
             }
+        }
+
+        function setLoadMode(mode) {
+            profiles[currentProfileIdx].loadMode = mode;
+            updateLoadModeUI();
+            calculate();
+            saveToLocalStorage();
+        }
+
+        function updateLoadModeUI() {
+            const mode = profiles[currentProfileIdx].loadMode;
+            const isManual = mode === 'manual';
+            
+            document.getElementById('mode-manual').className = `py-2 text-[10px] font-black uppercase rounded-lg transition-all ${isManual ? 'bg-[#1a2e1a] text-white' : 'text-slate-400 hover:bg-slate-100'}`;
+            document.getElementById('mode-auto').className = `py-2 text-[10px] font-black uppercase rounded-lg transition-all ${!isManual ? 'bg-orange-500 text-white' : 'text-slate-400 hover:bg-slate-100'}`;
+            
+            document.getElementById('manual-load-box').classList.toggle('hidden', !isManual);
+            document.getElementById('auto-load-box').classList.toggle('hidden', isManual);
         }
 
         function updateDayCount() {
@@ -408,7 +477,7 @@
                     currentDayIdx = i; 
                     renderDayTabs(containerId); 
                     calculate();
-                    if (activeMainView !== 'summary') { loadDayData(); renderFoodLists(); }
+                    if (activeMainView !== 'summary') { loadDayData(); renderFoodLists(); renderEquipLists(); }
                 };
                 container.appendChild(btn);
             });
@@ -422,9 +491,10 @@
             document.getElementById('p-height').value = p.height;
             document.getElementById('p-weight').value = p.weight;
             document.getElementById('p-level').value = p.level;
-            document.getElementById('label-load-current').innerText = `Poids du sac fixe de ${p.name} (kg)`;
+            document.getElementById('label-load-current').innerText = `Poids sac de ${p.name} (kg)`;
             document.getElementById('nav-p0').innerText = profiles[0].name;
             document.getElementById('nav-p1').innerText = profiles[1].name;
+            updateLoadModeUI();
         }
 
         function loadDayData() {
@@ -463,16 +533,45 @@
             saveToLocalStorage();
         }
 
+        // --- GESTION ÉQUIPEMENT ---
+        function addEquipItem(pIdx) {
+            profiles[pIdx].equipment.push({ 
+                id: 'e-' + Math.random().toString(36).substr(2, 9), 
+                label: "Nouvel objet", qty: 1, weight: 500, selected: true 
+            });
+            renderEquipLists();
+            calculate();
+            saveToLocalStorage();
+        }
+
+        function renderEquipLists() {
+            const list = document.getElementById('equip-list-current');
+            list.innerHTML = '';
+            const pIdx = currentProfileIdx;
+            profiles[pIdx].equipment.forEach((item, eIdx) => {
+                const div = document.createElement('div');
+                div.className = `equip-grid bg-white p-3 rounded-xl border-2 transition-all ${item.selected ? 'border-orange-500/30 bg-orange-50/10' : 'border-slate-50'}`;
+                div.innerHTML = `
+                    <div class="flex justify-center">
+                        <input type="checkbox" ${item.selected ? 'checked' : ''} onchange="profiles[${pIdx}].equipment[${eIdx}].selected = this.checked; renderEquipLists(); calculate(); saveToLocalStorage();" 
+                               class="w-5 h-5 rounded-md accent-orange-500 cursor-pointer">
+                    </div>
+                    <div><input type="number" value="${item.qty}" min="1" oninput="profiles[${pIdx}].equipment[${eIdx}].qty = parseInt(this.value)||1; calculate(); saveToLocalStorage();" class="input-field text-center font-bold px-1 w-full"></div>
+                    <div><input type="text" value="${item.label}" oninput="profiles[${pIdx}].equipment[${eIdx}].label = this.value; saveToLocalStorage();" class="input-field w-full font-medium"></div>
+                    <div><input type="number" value="${item.weight}" oninput="profiles[${pIdx}].equipment[${eIdx}].weight = parseFloat(this.value)||0; calculate(); saveToLocalStorage();" class="input-field w-full text-slate-500 font-bold"></div>
+                    <button onclick="profiles[${pIdx}].equipment.splice(${eIdx},1); renderEquipLists(); calculate(); saveToLocalStorage();" class="text-slate-300 hover:text-red-500 transition-colors p-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                    </button>
+                `;
+                list.appendChild(div);
+            });
+        }
+
+        // --- GESTION NOURRITURE ---
         function addFoodItem(pIdx) {
-            const newId = 'f-' + Math.random().toString(36).substr(2, 9);
-            const defaultKcal = 400;
-            const defaultWeight = Math.round(defaultKcal / 2.5);
             profiles[pIdx].food.push({ 
-                id: newId, 
-                label: "Nouvel aliment", 
-                weight: defaultWeight,
-                kcal: defaultKcal, 
-                prot: 0, gluc: 0, lip: 0, sod: 0, fib: 0 
+                id: 'f-' + Math.random().toString(36).substr(2, 9), 
+                label: "Nouvel aliment", weight: 200, kcal: 400, prot: 0, gluc: 0, lip: 0, sod: 0, fib: 0 
             });
             renderFoodLists();
             calculate();
@@ -530,7 +629,7 @@
                     <div><input type="number" value="${item.sod}" oninput="updateFoodItem(${pIdx}, ${fIdx}, 'sod', this.value)" class="input-field w-full text-slate-500"></div>
                     <div><input type="number" value="${item.fib}" oninput="updateFoodItem(${pIdx}, ${fIdx}, 'fib', this.value)" class="input-field w-full text-slate-500"></div>
                     <button onclick="profiles[${pIdx}].food.splice(${fIdx},1); renderFoodLists(); calculate(); saveToLocalStorage();" class="text-slate-300 hover:text-red-500 transition-colors p-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/></svg>
                     </button>
                 `;
                 list.appendChild(div);
@@ -580,42 +679,32 @@
             const foodSummaryGrid = document.getElementById('food-summary-grid');
             const localPerformanceDiv = document.getElementById('local-performance-view');
             const grocerySummaryGrid = document.getElementById('grocery-summary-grid');
+            const equipmentSummaryGrid = document.getElementById('equipment-summary-grid');
             
             if (resultsSummaryDiv) resultsSummaryDiv.innerHTML = '';
             if (foodSummaryGrid) foodSummaryGrid.innerHTML = '';
             if (localPerformanceDiv) localPerformanceDiv.innerHTML = '';
             if (grocerySummaryGrid) grocerySummaryGrid.innerHTML = '';
-
-            let totalFoodWeightByProfile = profiles.map((p, pIdx) => {
-                let totalGrams = 0;
-                days.forEach(day => {
-                    const selections = day.selectedFood[pIdx];
-                    for (const fId in selections) {
-                        const foodItem = p.food.find(f => f.id === fId);
-                        if (foodItem) totalGrams += (foodItem.weight * selections[fId]);
-                    }
-                });
-                return totalGrams;
-            });
-
-            let profileGroceries = profiles.map(() => ({}));
-            days.forEach((day) => {
-                profiles.forEach((p, pIdx) => {
-                    const daySelections = day.selectedFood[pIdx];
-                    for (const foodId in daySelections) {
-                        const qty = daySelections[foodId];
-                        if (qty > 0) {
-                            if (!profileGroceries[pIdx][foodId]) profileGroceries[pIdx][foodId] = 0;
-                            profileGroceries[pIdx][foodId] += qty;
-                        }
-                    }
-                });
-            });
+            if (equipmentSummaryGrid) equipmentSummaryGrid.innerHTML = '';
 
             profiles.forEach((p, i) => {
                 const W = p.weight || 1;
-                const baseSacPoids = d.loads[i] || 0;
                 
+                // Calcul du poids d'équipement sélectionné
+                const equipWeightGrams = p.equipment.reduce((acc, item) => item.selected ? acc + (item.weight * item.qty) : acc, 0);
+                const equipWeightKg = equipWeightGrams / 1000;
+
+                // Calcul du poids de nourriture totale au départ
+                let totalFoodGrams = 0;
+                days.forEach(day => {
+                    const selections = day.selectedFood[i];
+                    for (const fId in selections) {
+                        const foodItem = p.food.find(f => f.id === fId);
+                        if (foodItem) totalFoodGrams += (foodItem.weight * selections[fId]);
+                    }
+                });
+
+                // Calcul nourriture consommée jusqu'à aujourd'hui
                 let consumedWeightUntilToday = 0;
                 for (let dayStep = 0; dayStep < currentDayIdx; dayStep++) {
                     const selections = days[dayStep].selectedFood[i];
@@ -625,9 +714,18 @@
                     }
                 }
                 
-                const foodWeightRemainingKg = (totalFoodWeightByProfile[i] - consumedWeightUntilToday) / 1000;
+                const foodWeightRemainingKg = (totalFoodGrams - consumedWeightUntilToday) / 1000;
+                
+                // Choix de la base du sac (Manuel vs Auto)
+                const baseSacPoids = (p.loadMode === 'auto') ? equipWeightKg : (d.loads[i] || 0);
                 const L = baseSacPoids + foodWeightRemainingKg;
 
+                // Mise à jour de l'UI si on est sur le profil actif
+                if (i === currentProfileIdx && activeMainView !== 'summary') {
+                    document.getElementById('auto-load-val').innerText = `${equipWeightKg.toFixed(2)} kg`;
+                }
+
+                // Calculs nutritionnels du jour
                 const daySelections = d.selectedFood[i];
                 let selectedItemsList = [];
                 let currentDayFoodWeightGrams = 0;
@@ -642,13 +740,11 @@
                     return acc;
                 }, { kcal: 0, prot: 0, gluc: 0, lip: 0, sod: 0, fib: 0 });
 
-                let bmrDay = (10 * W) + (6.25 * p.height) - (5 * p.age);
-                bmrDay += (p.gender === "M") ? 5 : -161;
-                
+                // Formule Métabolique (Pandolf et al. modifiée)
+                let bmrDay = (10 * W) + (6.25 * p.height) - (5 * p.age) + (p.gender === "M" ? 5 : -161);
                 const timeSec = (d.time || 1) * 3600;
                 const distM = (d.dist || 0.001) * 1000;
                 const V = distM / timeSec; 
-                
                 const gradePos = (d.elevPos / distM) * 100;
                 const gradeNeg = (d.elevNeg / distM) * 100;
 
@@ -675,7 +771,6 @@
                                 Charge dégressive (L): ${L.toFixed(2)}kg
                             </div>
                         </div>
-
                         <div class="grid grid-cols-1 gap-4 mb-8">
                             <div class="bg-slate-50 rounded-2xl p-5 border border-slate-100">
                                 <span class="block text-[10px] uppercase font-black text-slate-400 mb-1 tracking-wider italic">Dépense Estimée (Étape ${currentDayIdx + 1})</span>
@@ -692,12 +787,10 @@
                                 </div>
                             </div>
                         </div>
-
                         <div class="p-4 rounded-xl mb-8 flex items-center justify-between ${balance >= 0 ? 'bg-green-50 text-green-800 border border-green-100' : 'bg-red-50 text-red-800 border border-red-100'}">
                             <span class="text-xs font-bold uppercase tracking-widest">Balance énergétique</span>
                             <span class="text-xl font-black">${balance > 0 ? '+' : ''}${Math.round(balance)}</span>
                         </div>
-
                         <div class="space-y-4">
                             <div class="flex justify-between text-[11px] mb-1 font-black text-slate-600 uppercase">
                                 <span>Fatigue Physiologique</span>
@@ -707,92 +800,68 @@
                                 <div class="h-full transition-all duration-500 ${intensity > 80 ? 'bg-gradient-to-r from-orange-500 to-red-600' : 'bg-gradient-to-r from-green-400 to-orange-500'}" style="width: ${intensity}%"></div>
                             </div>
                         </div>
-
-                        <div class="grid grid-cols-3 gap-2 mt-8">
-                            <div class="text-center p-2 rounded-lg bg-slate-50 border border-slate-100">
-                                <span class="block text-[8px] font-black text-slate-400 uppercase">Protéines</span>
-                                <span class="text-sm font-bold text-slate-700">${Math.round(totals.prot)}g</span>
-                            </div>
-                            <div class="text-center p-2 rounded-lg bg-slate-50 border border-slate-100">
-                                <span class="block text-[8px] font-black text-slate-400 uppercase">Glucides</span>
-                                <span class="text-sm font-bold text-slate-700">${Math.round(totals.gluc)}g</span>
-                            </div>
-                            <div class="text-center p-2 rounded-lg bg-slate-50 border border-slate-100">
-                                <span class="block text-[8px] font-black text-slate-400 uppercase">Lipides</span>
-                                <span class="text-sm font-bold text-slate-700">${Math.round(totals.lip)}g</span>
-                            </div>
-                        </div>
                     </div>
                 `;
 
+                // Generation des menus pour Synthèse
                 let foodListHTML = `
                     <div class="outdoor-card p-8 border-l-[8px] ${i === 0 ? 'border-green-800' : 'border-blue-800'} shadow-xl">
                         <div class="flex items-center gap-3 mb-6">
-                            <div class="p-2 bg-slate-100 rounded-lg">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-600"><path d="M6 13.87A4 4 0 0 1 7.41 6a5.11 5.11 0 0 1 1.05-1.54 5 5 0 0 1 7.08 0A5.11 5.11 0 0 1 16.59 6 4 4 0 0 1 18 13.87V21H6Z"/><line x1="6" x2="18" y1="17" y2="17"/></svg>
-                            </div>
                             <h4 class="font-black text-lg text-slate-800 uppercase tracking-tighter">Menu Étape ${currentDayIdx+1} - ${p.name}</h4>
                         </div>
                         ${selectedItemsList.length > 0 ? `
                             <div class="space-y-1">
-                                <div class="grid grid-cols-4 text-[9px] font-black text-slate-400 uppercase pb-2 px-2">
-                                    <div class="col-span-2">Aliment</div><div class="text-right">Masse</div><div class="text-right">Energie</div>
-                                </div>
                                 ${selectedItemsList.map(item => `
                                     <div class="grid grid-cols-4 py-3 px-2 border-t border-slate-50 items-center">
-                                        <div class="col-span-2">
-                                            <span class="block font-bold text-slate-700 text-sm truncate pr-2">${item.label}</span>
-                                            <span class="text-[9px] text-slate-400 uppercase">Portion x${item.qty}</span>
-                                        </div>
+                                        <div class="col-span-2 font-bold text-slate-700 text-sm">${item.label}</div>
                                         <div class="text-right font-medium text-slate-500 text-sm">${item.weightTotal}g</div>
-                                        <div class="text-right font-black text-slate-800 text-sm">${item.kcalTotal} <span class="text-[9px] text-slate-400">kcal</span></div>
+                                        <div class="text-right font-black text-slate-800 text-sm">${item.kcalTotal} kcal</div>
                                     </div>
                                 `).join('')}
-                                <div class="mt-6 p-4 bg-slate-50 rounded-xl flex justify-between items-center border border-slate-100">
-                                    <span class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Masse consommée ce jour</span>
-                                    <span class="text-lg font-black text-slate-800">${currentDayFoodWeightGrams} <span class="text-xs font-bold text-slate-400 uppercase">g</span></span>
-                                </div>
                             </div>
-                        ` : '<div class="text-center py-10 bg-slate-50 rounded-2xl border border-dashed border-slate-200"><p class="text-slate-400 font-medium text-sm italic">Aucune ration planifiée</p></div>'}
+                        ` : '<p class="text-center py-4 text-slate-400 italic">Vide</p>'}
                     </div>
                 `;
 
-                const groceryItems = profileGroceries[i];
-                const hasGrocery = Object.keys(groceryItems).length > 0;
-                let totalGroceryWeight = 0;
+                // Grocery list calculation
+                let profileGroceryItems = {};
+                days.forEach(day => {
+                    const selections = day.selectedFood[i];
+                    for (const fId in selections) {
+                        profileGroceryItems[fId] = (profileGroceryItems[fId] || 0) + selections[fId];
+                    }
+                });
+
                 let groceryListHTML = `
-                    <div class="outdoor-card p-8 border-t-[8px] ${i === 0 ? 'border-green-800' : 'border-blue-800'} shadow-xl">
-                        <div class="flex items-center justify-between mb-6">
-                            <div class="flex items-center gap-3">
-                                <div class="p-2 bg-orange-100 rounded-lg">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f97316" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg>
-                                </div>
-                                <h4 class="font-black text-lg text-slate-800 uppercase tracking-tighter">Épicerie de ${p.name}</h4>
-                            </div>
-                        </div>
+                    <div class="outdoor-card p-8 border-t-[8px] ${i === 0 ? 'border-green-800' : 'border-blue-800'}">
+                        <h4 class="font-black text-lg text-slate-800 uppercase mb-4">Épicerie de ${p.name}</h4>
                         <div class="space-y-2">
-                            ${hasGrocery ? `
-                                <div class="grid grid-cols-4 text-[9px] font-black text-slate-400 uppercase pb-2 px-2">
-                                    <div class="col-span-2">Aliment</div><div class="text-right">Quantité</div><div class="text-right">Masse Totale</div>
+                            ${Object.keys(profileGroceryItems).map(fid => {
+                                const foodRef = p.food.find(f => f.id === fid);
+                                if (!foodRef) return '';
+                                return `<div class="flex justify-between text-sm"><span>${foodRef.label}</span><span class="font-bold">x${profileGroceryItems[fid]}</span></div>`;
+                            }).join('')}
+                            <div class="mt-4 pt-2 border-t font-black flex justify-between"><span>Poids total nourriture</span><span>${(totalFoodGrams/1000).toFixed(2)} kg</span></div>
+                        </div>
+                    </div>
+                `;
+
+                // --- NOUVEAU : CALCUL SYNTHÈSE ÉQUIPEMENT ---
+                const selectedEquip = p.equipment.filter(item => item.selected);
+                let equipSummaryHTML = `
+                    <div class="outdoor-card p-8 border-t-[8px] ${i === 0 ? 'border-green-800' : 'border-blue-800'}">
+                        <h4 class="font-black text-lg text-slate-800 uppercase mb-4">Matériel de ${p.name}</h4>
+                        <div class="space-y-2">
+                            ${selectedEquip.length > 0 ? selectedEquip.map(item => `
+                                <div class="flex justify-between text-sm border-b border-slate-50 pb-1">
+                                    <span>${item.label} <span class="text-slate-400 text-xs">(x${item.qty})</span></span>
+                                    <span class="font-bold text-slate-500">${((item.weight * item.qty) / 1000).toFixed(2)} kg</span>
                                 </div>
-                                ${Object.keys(groceryItems).map(fid => {
-                                    const foodRef = p.food.find(f => f.id === fid) || {label: 'Inconnu', weight: 0};
-                                    const q = groceryItems[fid];
-                                    const wt = q * foodRef.weight;
-                                    totalGroceryWeight += wt;
-                                    return `
-                                        <div class="grid grid-cols-4 py-3 px-2 border-t border-slate-50 items-center">
-                                            <div class="col-span-2 font-bold text-slate-700 text-sm">${foodRef.label}</div>
-                                            <div class="text-right font-black text-orange-600 text-sm">x${q}</div>
-                                            <div class="text-right font-medium text-slate-500 text-sm">${wt >= 1000 ? (wt/1000).toFixed(2)+'kg' : wt+'g'}</div>
-                                        </div>
-                                    `;
-                                }).join('')}
-                                <div class="mt-6 p-4 bg-[#1a2e1a] rounded-xl flex justify-between items-center text-white">
-                                    <span class="text-[10px] font-black uppercase tracking-wider opacity-60">Poids Total Nourriture (Départ)</span>
-                                    <span class="text-lg font-black">${totalGroceryWeight >= 1000 ? (totalGroceryWeight/1000).toFixed(2) + ' kg' : totalGroceryWeight + ' g'}</span>
-                                </div>
-                            ` : '<p class="text-center text-slate-400 italic py-4">Aucun aliment sélectionné sur le trek.</p>'}
+                            `).join('') : '<p class="text-slate-400 italic text-sm">Aucun matériel sélectionné</p>'}
+                            <div class="mt-4 pt-2 border-t font-black flex justify-between text-orange-600">
+                                <span>Poids total matériel</span>
+                                <span>${equipWeightKg.toFixed(2)} kg</span>
+                            </div>
                         </div>
                     </div>
                 `;
@@ -801,6 +870,7 @@
                     resultsSummaryDiv.innerHTML += resultHTML;
                     foodSummaryGrid.innerHTML += foodListHTML;
                     grocerySummaryGrid.innerHTML += groceryListHTML;
+                    equipmentSummaryGrid.innerHTML += equipSummaryHTML; // Ajout à la grille
                 } else if (i === currentProfileIdx) {
                     localPerformanceDiv.innerHTML = resultHTML;
                 }
