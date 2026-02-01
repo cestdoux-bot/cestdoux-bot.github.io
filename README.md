@@ -174,8 +174,13 @@
                                 <input type="number" id="p-weight" oninput="updateProfileData()" class="input-field w-full">
                             </div>
                             <div class="space-y-1.5">
-                                <label class="text-[11px] font-bold text-slate-400 uppercase ml-1">Niveau physique (1-10)</label>
-                                <input type="number" id="p-level" oninput="updateProfileData()" min="1" max="10" class="input-field w-full">
+                                <label class="text-[11px] font-bold text-slate-400 uppercase ml-1">Niveau physique</label>
+                                <select id="p-level" onchange="updateProfileData()" class="input-field w-full appearance-none">
+                                    <option value="3">Balade (Occasionnel)</option>
+                                    <option value="5">Randonneur (Régulier)</option>
+                                    <option value="7">Sportif (Intense)</option>
+                                    <option value="9">Expert (Alpin)</option>
+                                </select>
                             </div>
                         </div>
                     </section>
@@ -304,7 +309,30 @@
 
         let days = [];
 
+        // --- NOUVEAU : Sauvegarde Automatique ---
+        function saveToLocalStorage() {
+            const dataToSave = {
+                profiles: profiles,
+                days: days,
+                totalDays: document.getElementById('total-days').value
+            };
+            localStorage.setItem('rando_expert_session', JSON.stringify(dataToSave));
+        }
+
         function init() {
+            // Tentative de chargement depuis le localStorage
+            const savedData = localStorage.getItem('rando_expert_session');
+            if (savedData) {
+                try {
+                    const parsed = JSON.parse(savedData);
+                    if (parsed.profiles) profiles = parsed.profiles;
+                    if (parsed.days) days = parsed.days;
+                    if (parsed.totalDays) document.getElementById('total-days').value = parsed.totalDays;
+                } catch (e) {
+                    console.error("Erreur lors du chargement de la session :", e);
+                }
+            }
+
             updateDayCount();
             switchMainView('p0');
         }
@@ -364,6 +392,7 @@
             }
             if (days.length > count) days = days.slice(0, count);
             renderDayTabs(activeMainView === 'summary' ? 'summary-day-tabs' : 'day-tabs');
+            saveToLocalStorage();
         }
 
         function renderDayTabs(containerId) {
@@ -418,6 +447,7 @@
             d.elevNeg = parseFloat(document.getElementById('d-elev-neg').value) || 0;
             d.terrain = parseFloat(document.getElementById('d-terrain').value) || 1;
             d.loads[currentProfileIdx] = parseFloat(document.getElementById('d-load-current').value) || 0;
+            saveToLocalStorage();
         }
 
         function updateProfileData() {
@@ -430,6 +460,7 @@
             p.level = parseInt(document.getElementById('p-level').value) || 5;
             loadProfileUI();
             calculate();
+            saveToLocalStorage();
         }
 
         function addFoodItem(pIdx) {
@@ -445,11 +476,13 @@
             });
             renderFoodLists();
             calculate();
+            saveToLocalStorage();
         }
 
         function updateFoodItem(pIdx, fIdx, field, value) {
             profiles[pIdx].food[fIdx][field] = (field === 'label') ? value : (parseFloat(value) || 0);
             calculate();
+            saveToLocalStorage();
         }
 
         function toggleFoodSelection(pIdx, fId) {
@@ -458,6 +491,7 @@
             else selections[fId] = 1;
             renderFoodLists();
             calculate();
+            saveToLocalStorage();
         }
 
         function updateFoodQuantity(pIdx, fId, qty) {
@@ -467,6 +501,7 @@
             else delete selections[fId];
             renderFoodLists();
             calculate();
+            saveToLocalStorage();
         }
 
         function renderFoodLists() {
@@ -494,7 +529,7 @@
                     <div><input type="number" value="${item.lip}" oninput="updateFoodItem(${pIdx}, ${fIdx}, 'lip', this.value)" class="input-field w-full text-slate-500"></div>
                     <div><input type="number" value="${item.sod}" oninput="updateFoodItem(${pIdx}, ${fIdx}, 'sod', this.value)" class="input-field w-full text-slate-500"></div>
                     <div><input type="number" value="${item.fib}" oninput="updateFoodItem(${pIdx}, ${fIdx}, 'fib', this.value)" class="input-field w-full text-slate-500"></div>
-                    <button onclick="profiles[${pIdx}].food.splice(${fIdx},1); renderFoodLists(); calculate();" class="text-slate-300 hover:text-red-500 transition-colors p-2">
+                    <button onclick="profiles[${pIdx}].food.splice(${fIdx},1); renderFoodLists(); calculate(); saveToLocalStorage();" class="text-slate-300 hover:text-red-500 transition-colors p-2">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
                     </button>
                 `;
@@ -532,6 +567,7 @@
                         document.getElementById('total-days').value = imported.totalDays;
                         currentDayIdx = 0;
                         switchMainView('p0');
+                        saveToLocalStorage();
                     }
                 } catch (err) { console.error(err); }
             };
